@@ -1,4 +1,4 @@
-package com.trsh.kpi.repository;
+package com.trsh.kpi.reposatory;
 
 import com.trsh.kpi.model.Cadet;
 import org.springframework.data.jpa.repository.JpaRepository;

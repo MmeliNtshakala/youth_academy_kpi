@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TrshKpiApplication {
 
     public static void main(String[] args){
-        SpringBootApplication.run(TrshKpiApplication.class, args)
+        SpringBootApplication.run(TrshKpiApplication.class, args);
     }
     
 }
