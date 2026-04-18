@@ -2,8 +2,8 @@ package com.trsh.kpi.service;
 
 import com.trsh.kpi.model.Cadet;
 import com.trsh.kpi.model.FlagEvent;
-import com.trsh.kpi.reposatory.CadetRepository;
-import com.trsh.kpi.reposatory.FlagEventRepository;
+import com.trsh.kpi.repository.CadetRepository;
+import com.trsh.kpi.repository.FlagEventRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

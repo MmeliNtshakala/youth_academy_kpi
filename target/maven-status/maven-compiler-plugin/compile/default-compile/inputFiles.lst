@@ -1,0 +1,8 @@
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/FlagEventRepository.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/data/DataSeeder.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/CadetRepository.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/service/CadetService.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/FlagEvent.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/TrshKpiApplication.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/Cadet.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/controller/CadetController.java
