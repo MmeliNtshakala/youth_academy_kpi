@@ -47,7 +47,7 @@ public class DataSeeder implements CommandLineRunner {
     };
 
     private static final String[] PROJECTS = {
-        "Leadership", "Community", "Research", "Operations"
+        "eZenzweni", "Gauteng", "eMangalisweni", "eMazweni", "Mozambique", "Zimbabwe", "Botswana", "International"
     };
 
     private static final String[] PROJECT_MANAGERS = {
