@@ -1,481 +1,316 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRSH YOUTH ACADEMY</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <div class="app">
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  background: #f5f5f3;
+  color: #1a1a1a;
+}
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <h2>TRSH Youth Academy</h2>
-        <p>Cadet KPI System</p>
-      </div>
-      <nav class="nav-section">
-        <div class="nav-label">Main</div>
-        <div class="nav-item active" onclick="showView('dashboard', this)">
-          Dashboard
-        </div>
-        <div class="nav-item" onclick="showView('cadets', this)">
-          Cadets
-        </div>
-        <div class="nav-item" onclick="showView('flags', this)">
-          Flags &amp; Actions
-        </div>
-        <div class="nav-item" onclick="showView('register', this)">
-          Register
-        </div>
-        <div class="nav-item" onclick="showView('reports', this)">
-          Reports
-        </div>
-      </nav>
-      <div class="role-badge">
-        <div class="name">Admin</div>
-        <div class="role">Full access · 2026</div>
-      </div>
-    </aside>
+.app { display: flex; height: 100vh; }
 
-    <!-- MAIN-->
-    <div class="main">
+/* ── Sidebar ── */
+.sidebar {
+  width: 220px; min-width: 220px;
+  background: #fff;
+  border-right: 0.5px solid #e0e0dc;
+  display: flex; flex-direction: column;
+}
+.sidebar-logo {
+  padding: 20px 16px 14px;
+  border-bottom: 0.5px solid #e0e0dc;
+}
+.sidebar-logo h2 { font-size: 15px; font-weight: 500; }
+.sidebar-logo p  { font-size: 11px; color: #888; margin-top: 2px; }
+.nav-section { padding: 12px 8px 0; flex: 1; }
+.nav-label {
+  font-size: 10px; color: #aaa;
+  padding: 0 8px 6px;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.nav-item {
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: #555;
+  margin-bottom: 2px; transition: background .1s;
+}
+.nav-item:hover  { background: #f5f5f3; }
+.nav-item.active { background: #f5f5f3; color: #1a1a1a; font-weight: 500; }
+.role-badge {
+  margin: 0 8px 16px; padding: 8px 12px;
+  background: #f5f5f3; border-radius: 8px; font-size: 11px;
+}
+.role-badge .name { font-weight: 500; }
+.role-badge .role { color: #888; }
 
-      <!-- TOP BAR -->
-      <div class="topbar">
-        <h1 id="page-title">Dashboard</h1>
-        <div class="topbar-actions">
-          <button class="btn" onclick="openModal()">+ Add cadet</button>
-        </div>
-      </div>
+/* ── Main ── */
+.main { flex: 1; overflow: auto; display: flex; flex-direction: column; }
+.topbar {
+  background: #fff; border-bottom: 0.5px solid #e0e0dc;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar h1 { font-size: 17px; font-weight: 500; }
+.topbar-actions { display: flex; gap: 8px; }
+.content { padding: 20px 24px; flex: 1; }
 
-      <div class="content">
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
 
-        <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="view active">
-          <div class="metrics-row">
-            <div class="metric-card">
-              <div class="metric-label">Total cadets</div>
-              <div class="metric-value" id="m-total">—</div>
-              <div class="metric-sub">12-month programme</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Active (no flag)</div>
-              <div class="metric-value green" id="m-active">—</div>
-              <div class="metric-sub">Good standing</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Under flag</div>
-              <div class="metric-value red" id="m-flagged">—</div>
-              <div class="metric-sub">Yellow / Orange / Red</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Avg attendance</div>
-              <div class="metric-value" id="m-attendance">—</div>
-              <div class="metric-sub">Across all regions</div>
-            </div>
-          </div>
+/* ── Metric cards ── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.metrics-row.three-col { grid-template-columns: repeat(3, 1fr); }
+.metric-card {
+  background: #f0f0ec; border-radius: 8px; padding: 14px 16px;
+}
+.metric-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+.metric-value { font-size: 28px; font-weight: 500; }
+.metric-value.green  { color: #3b6d11; }
+.metric-value.red    { color: #a32d2d; }
+.metric-value.yellow { color: #854f0b; }
+.metric-value.orange { color: #993c1d; }
+.metric-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
 
-          <div class="two-col">
-            <div class="panel">
-              <div class="panel-header">
-                <span class="panel-title">Flag distribution</span>
-              </div>
-              <canvas id="flagChart" height="220"></canvas>
-            </div>
-            <div class="panel">
-              <div class="panel-header">
-                <span class="panel-title">Attendance by region</span>
-              </div>
-              <canvas id="projectChart" height="220"></canvas>
-            </div>
-          </div>
+/* ── Panels ── */
+.panel {
+  background: #fff; border: 0.5px solid #e0e0dc;
+  border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
+}
+.panel-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+}
+.panel-title { font-size: 14px; font-weight: 500; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Recent flag activity</span>
-            </div>
-            <div id="recent-activity"></div>
-          </div>
-        </div>
+/* ── Filters ── */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-input, .filter-select {
+  padding: 5px 10px; border-radius: 8px;
+  border: 0.5px solid #ccc; background: #fff;
+  font-size: 12px; color: #1a1a1a; font-family: inherit;
+}
+.filter-input { width: 180px; }
 
-        <!-- CADETS VIEW -->
-        <div id="view-cadets" class="view">
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Cadet registry</span>
-              <div class="filters">
-                <input
-                  class="filter-input"
-                  id="search"
-                  placeholder="Search name or ID..."
-                  oninput="loadCadets()">
-                <select class="filter-select"
-                  id="filter-flag" onchange="loadCadets()">
-                  <option value="">All flags</option>
-                  <option value="NONE">No flag</option>
-                  <option value="YELLOW">Yellow</option>
-                  <option value="ORANGE">Orange</option>
-                  <option value="RED">Red</option>
-                </select>
-                <select class="filter-select"
-                  id="filter-project" onchange="loadCadets()">
-                  <option value="">All regions</option>
-                  <option>eMazweni</option>
-                  <option>eMangalisweni</option>
-                  <option>eZenzweni</option>
-                  <option>Gauteng</option>
-                  <option>Botswana</option>
-                  <option>Zimbabwe</option>
-                  <option>Mozambique</option>
-                  <option>International</option>
-                </select>
-              </div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Cadet</th>
-                  <th>Region</th>
-                  <th>Flag</th>
-                  <th>Attendance</th>
-                  <th>Last contact</th>
-                  <th>Liason</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="cadet-table"></tbody>
-            </table>
-            <div class="table-count" id="table-count"></div>
-          </div>
-        </div>
+/* ── Table ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 6px 10px;
+  font-size: 11px; color: #888; font-weight: 400;
+  border-bottom: 0.5px solid #e0e0dc;
+}
+td {
+  padding: 9px 10px; border-bottom: 0.5px solid #e0e0dc;
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.table-count { margin-top: 10px; font-size: 11px; color: #aaa; }
 
-        <!-- FLAGS VIEW -->
-        <div id="view-flags" class="view">
-          <div class="metrics-row three-col">
-            <div class="metric-card">
-              <div class="metric-label">Yellow flags</div>
-              <div class="metric-value yellow" id="f-yellow">—</div>
-              <div class="metric-sub">First warning</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Orange flags</div>
-              <div class="metric-value orange" id="f-orange">—</div>
-              <div class="metric-sub">Formal action</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Red flags</div>
-              <div class="metric-value red" id="f-red">—</div>
-              <div class="metric-sub">Correction</div>
-            </div>
-          </div>
+/* ── Cadet cell ── */
+.cadet-cell { display: flex; align-items: center; gap: 8px; }
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #dce9f8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 500; color: #185fa5; flex-shrink: 0;
+}
+.cadet-name { font-weight: 500; font-size: 13px; }
+.cadet-id   { font-size: 11px; color: #aaa; }
 
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Flagged cadets</span>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Cadet</th>
-                  <th>Flag</th>
-                  <th>Days since flag</th>
-                  <th>Region</th>
-                  <th>Liason</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="flag-table"></tbody>
-            </table>
-          </div>
+/* ── Flag badges ── */
+.flag {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+}
+.flag-none   { background: #eaf3de; color: #3b6d11; }
+.flag-yellow { background: #faeeda; color: #854f0b; }
+.flag-orange { background: #faece7; color: #993c1d; }
+.flag-red    { background: #fcebeb; color: #a32d2d; }
 
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Framework rules</span>
-            </div>
-            <div class="rules-grid">
-              <div class="rule-card yellow-card">
-                <div class="rule-title yellow-text">Yellow — First warning</div>
-                <p>Missed 2 meetings or 14 days no response.</p>
-                <p>Written notice issued. 5 days to re-engage.</p>
-              </div>
-              <div class="rule-card orange-card">
-                <div class="rule-title orange-text">Orange — Formal action</div>
-                <p>No re-engagement within 5 days of Yellow.</p>
-                <p>Removed from team. Referred to Mentorship.</p>
-              </div>
-              <div class="rule-card red-card">
-                <div class="rule-title red-text">Red — Correction</div>
-                <p>2+ Orange flags in 12 months or plan failure.</p>
-                <p>Referred to Disciplinary Subcommittee.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+/* ── Progress bar ── */
+.progress-wrap { display: flex; align-items: center; gap: 6px; }
+.progress-bar {
+  height: 4px; width: 70px;
+  background: #e8e8e4; border-radius: 2px; overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 2px; background: #1d9e75; }
+.progress-fill.mid { background: #ba7517; }
+.progress-fill.low { background: #d85a30; }
+.progress-pct { font-size: 11px; color: #888; }
 
-        <div id="view-register"  class="view">
-          <div id="register-landing">
-            <div class="two-col" style="margin-bottom: 16px">
+/* ── Buttons ── */
+.action-btns { display: flex; gap: 4px; }
+.icon-btn {
+  padding: 4px 8px; border-radius: 6px;
+  border: 0.5px solid #ddd; background: transparent;
+  cursor: pointer; font-size: 11px; color: #555; font-family: inherit;
+}
+.icon-btn:hover { background: #f5f5f3; color: #1a1a1a; }
+.btn {
+  padding: 7px 14px; border-radius: 8px;
+  border: 0.5px solid #ccc; background: transparent;
+  cursor: pointer; font-size: 13px; color: #1a1a1a; font-family: inherit;
+}
+.btn:hover { background: #f5f5f3; }
+.btn-primary {
+  background: #1a1a1a; color: #fff; border-color: #1a1a1a;
+}
+.btn-primary:hover { opacity: .85; }
 
-              <div class="panel">
-                <div class="panel-header">
-                  <span class="panel-title">Create meeting</span>
-                </div>
-                <div class="form-row">
-                  <label>Meeting type</label>
-                  <select class="form-input" id="reg-type">
-                    <option>Sunday Imfundiso</option>
-                    <option>Provincial Meeting</option>
-                    <option>National Meeting</option>
-                    <option>Special Event</option>
-                  </select>
-                </div>
-                <div class="form-row">
-                  <label>Title (optional)</label>
-                  <input class="form-input" id="reg-title"
-                    placeholder="Leave blank to auto-generate">
-                </div>
-                <div class="form-row">
-                  <label>Region</label>
-                  <select class="form-input" id="reg-region">
-                    <option value="ALL">All regions</option>
-                    <option>Gauteng</option>
-                    <option>eMazweni</option>
-                    <option>eMangalisweni</option></optiom></option>
-                    <option>eZenzweni</option>
-                    <option>Zimbabwe</option>
-                    <option>Mozambique</option>
-                    <option>Botswana</option>
-                    <option>International</option>
-                  </select>
-                </div>
-                <div class="form-row">
-                  <label>Date</label>
-                  <input class="form-input" id="reg-date" type="date">
-                </div>
-                <div class="form-row">
-                  <label>Created by</label>
-                  <input class="form-input" id="reg-created-by"
-                    placeholder="e.g. Liason name">
-                </div>
-                <div class="form-row">
-                  <label>Notes (optional)</label>
-                  <input class="form-input" id="reg-notes"
-                    placeholder="e.g. Meeting Agenda">
-                </div>
-                <button class="btn btn-primary"
-                  style="width:100%;margin-top:4px"
-                  onclick="createMeeting()">
-                  Create meeting
-                </button>
-              </div>
+/* ── Timeline ── */
+.timeline { display: flex; flex-direction: column; gap: 10px; }
+.tl-item  { display: flex; gap: 10px; align-items: flex-start; }
+.tl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ccc; margin-top: 4px; flex-shrink: 0;
+}
+.tl-dot.yellow   { background: #ba7517; }
+.tl-dot.orange   { background: #993c1d; }
+.tl-dot.red      { background: #a32d2d; }
+.tl-dot.restored { background: #3b6d11; }
+.tl-dot.notice   { background: #378add; }
+.tl-dot.plan     { background: #7f77dd; }
+.tl-text { font-size: 12px; color: #555; line-height: 1.5; }
+.tl-text strong { color: #1a1a1a; font-weight: 500; }
+.tl-date { font-size: 11px; color: #aaa; }
 
-              <!-- Incomplete register-->
-              <div class="panel">
-                <div class="panel-header">
-                  <span class="panel-title">Pending registers</span>
-                </div>
-                <div id="incomplete">
-                  <p style="color:#aaa;font-size:12px">
-                    Loading...
-                  </p>
-                </div>
-              </div>
-            </div>
+/* ── Rules grid ── */
+.rules-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+  font-size: 12px;
+}
+.rule-card { background: #f5f5f3; border-radius: 8px; padding: 12px; }
+.rule-card p { color: #666; margin-top: 4px; line-height: 1.5; }
+.rule-title { font-weight: 500; margin-bottom: 4px; }
+.yellow-text { color: #854f0b; }
+.orange-text { color: #993c1d; }
+.red-text    { color: #a32d2d; }
 
-            <div class="panel">
-              <div class="panel-header">
-                <span class="panel-title">All meetings</span>
-                <select class="filter-select"
-                  id="meeting-region-filter"
-                  onchange="loadMeetings()">
-                  <option value="">All regions</option>
-                  <option>Gauteng</option>
-                  <option>eMazweni</option>
-                  <option>eMangalisweni</option>
-                  <option>eZenzweni</option>
-                  <option>Zimbabwe</option>
-                  <option>Mozambique</option>
-                  <option>Botswana</option>
-                  <option>International</option>
-                </select>
-              </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Region</th>
-                    <th>Date</th>
-                    <th>Register</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="meetings-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="register-sheet" style="display:none">
-            <div class="panel">
-              <div class="panel-header">
-                <div>
-                  <div class="panel-title" id="sheet-title">
-                    Taking register...
-                  </div>
-                  <div style="font-size:12px;color:#aaa;margin-top:2px"
-                    id="sheet-subtitle"></div>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center">
-                  <input class="filter-input" id="sheet-search"
-                    placeholder="Search cadet..."
-                    oninput="filterSheetRows()">
-                  <button class="btn" onclick="backToLanding()">
-                    Back
-                  </button>
-                  <button class="btn btn-primary"
-                    onclick="submitRegister()">
-                    Submit register
-                  </button>
-                </div>
-              </div>
+/* ── KPI summary ── */
+.stat-row {
+  display: flex; justify-content: space-between;
+  padding: 8px 0; border-bottom: 0.5px solid #e0e0dc; font-size: 13px;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-key { color: #888; }
+.stat-val { font-weight: 500; }
 
-              <div style="display:flex;align-items:center;
-                gap:12px;margin-bottom:16px;
-                padding:10px 12px;background:#f5f5f3;
-                border-radius:8px">
-                <span style="font-size:12px;color:#888;
-                  white-space:nowrap">Recorded by</span>
-                <input class="form-input"
-                  id="register-recorded-by"
-                  placeholder="Enter your name (PM)"
-                  style="max-width:240px">
-                <span style="font-size:12px;color:#aaa">
-                  — required before submitting
-                </span>
-              </div>
+/* ── Register sheet ── */
+.province-group { margin-bottom: 24px; }
+.province-heading {
+  font-size: 13px; font-weight: 500;
+  color: #1a1a1a; padding: 8px 0 10px;
+  border-bottom: 0.5px solid #e0e0dc;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.province-count {
+  font-size: 11px; font-weight: 400; color: #aaa;
+}
+.register-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 160px 160px 1fr;
+  gap: 10px; align-items: center;
+  padding: 7px 0;
+  border-bottom: 0.5px solid #f0f0ec;
+}
+.register-row:last-child { border-bottom: none; }
+.register-row.absent-row { background: #fffaf7; border-radius: 6px; }
+.reg-num {
+  font-size: 11px; color: #aaa; text-align: right;
+}
+.reg-name { font-size: 13px; }
+.reg-code { font-size: 11px; color: #aaa; }
+.status-btn-group { display: flex; gap: 4px; }
+.status-btn {
+  padding: 4px 10px; border-radius: 20px;
+  border: 0.5px solid #ddd; background: transparent;
+  cursor: pointer; font-size: 11px; font-family: inherit;
+  color: #555; transition: all .1s;
+}
+.status-btn:hover { border-color: #aaa; }
+.status-btn.selected-present {
+  background: #eaf3de; color: #3b6d11; border-color: #b5d97a;
+}
+.status-btn.selected-absent {
+  background: #fcebeb; color: #a32d2d; border-color: #f09595;
+}
+.status-btn.selected-late {
+  background: #faeeda; color: #854f0b; border-color: #fac775;
+}
+.reason-input {
+  width: 100%; padding: 5px 8px; border-radius: 6px;
+  border: 0.5px solid #f09595; background: #fffaf7;
+  font-size: 12px; color: #1a1a1a; font-family: inherit;
+}
+.reason-input::placeholder { color: #d85a30; }
+.reason-input.filled { border-color: #ccc; background: #fff; }
 
-              <!-- Error / success banner -->
-              <div id="register-banner" style="display:none"></div>
+/* ── Register header row ── */
+.register-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 160px 160px 1fr;
+  gap: 10px; padding: 0 0 6px;
+  font-size: 11px; color: #aaa;
+  border-bottom: 0.5px solid #e0e0dc;
+  margin-bottom: 8px;
+}
 
-              <!-- Province groups rendered here -->
-              <div id="register-groups"></div>
-            </div>
-          </div>
-        </div>
+/* ── Banner ── */
+.banner {
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 13px; margin-bottom: 14px;
+}
+.banner-error   { background: #fcebeb; color: #a32d2d; }
+.banner-success { background: #eaf3de; color: #3b6d11; }
+.banner-warning { background: #faeeda; color: #854f0b; }
 
-        <!-- REPORTS VIEW -->
-        div id="view-reports" class="view">
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">
-                KPI summary — 12-month programme
-              </span>
-            </div>
-            <div id="kpi-summary"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Attendance by region</span>
-            </div>
-            <canvas id="reportRegionChart" height="200"></canvas>
-          </div>
-          <div class="panel">
-            <div class="panel-header">
-              <span class="panel-title">Cadet attendance lookup</span>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px">
-              <input class="filter-input" id="report-search"
-                placeholder="Search cadet name..."
-                style="width:240px"
-                oninput="searchCadetReport()">
-            </div>
-            <div id="report-cadet-results"></div>
-            <div id="report-cadet-detail"></div>
-          </div>
-        </div>
+/* ── Meeting status badge ── */
+.meeting-status {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px; font-size: 11px;
+}
+.meeting-done    { background: #eaf3de; color: #3b6d11; }
+.meeting-pending { background: #faeeda; color: #854f0b; }
 
-      </div>
-    </div>
-  </div>
+/* ── Pending register card ── */
+.pending-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 0.5px solid #e0e0dc; font-size: 12px;
+}
+.pending-card:last-child { border-bottom: none; }
 
-  <!-- ADD CADET MODAL -->
-  <div class="modal-bg" id="modal">
-    <div class="modal">
-      <h3>Add new cadet</h3>
-      <div class="form-row">
-        <label>Full name</label>
-        <input class="form-input" id="new-name" placeholder="e.g. Cadet Name">
-      </div>
-      <div class="form-two-col">
-        <div class="form-row">
-          <label>Cadet ID</label>
-          <input class="form-input" id="new-code" placeholder="e.g. CDT-0301">
-        </div>
-        <div class="form-row">
-          <label>Project</label>
-          <select class="form-input" id="new-project">
-            <option>eMangalisweni</option>
-            <option>Gauteng</option>
-            <option>eMazweni</option>
-            <option>eZenzweni</option>
-            <option>Zimbabwe</option>
-            <option>Mozambique</option>
-            <option>International</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-two-col">
-        <div class="form-row">
-          <label>Attendance (%)</label>
-          <input class="form-input" id="new-att"
-            type="number" min="0" max="100" value="80">
-        </div>
-        <div class="form-row">
-          <label>Liason</label>
-          <input class="form-input" id="new-pm"
-            placeholder="e.g. Liason Name">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitNewCadet()">
-          Add cadet
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- FLAG ACTION MODAL -->
-  <div class="modal-bg" id="flag-modal">
-    <div class="modal">
-      <h3 id="flag-modal-title">Issue flag</h3>
-      <div class="form-row">
-        <label>Triggered by</label>
-        <input class="form-input" id="flag-triggered-by"
-          placeholder="e.g. Ms Dlamini">
-      </div>
-      <div class="form-row" id="flag-reason-row">
-        <label>Reason</label>
-        <input class="form-input" id="flag-reason"
-          placeholder="e.g. Missed 2 consecutive meetings">
-      </div>
-      <div class="form-row" id="flag-notes-row" style="display:none">
-        <label>Notes</label>
-        <textarea class="form-input" id="flag-notes" rows="3"
-          placeholder="e.g. Correction completed satisfactorily."></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeFlagModal()">Cancel</button>
-        <button class="btn btn-primary" id="flag-modal-confirm"
-          onclick="submitFlagAction()">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="app.js"></script>
-
-</body>
-</html>
+/* ── Modal ── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 12px; padding: 24px;
+  width: 460px; max-width: 95vw; border: 0.5px solid #ccc;
+}
+.modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+.form-row { margin-bottom: 12px; }
+.form-row label {
+  display: block; font-size: 12px; color: #888; margin-bottom: 4px;
+}
+.form-input {
+  width: 100%; padding: 7px 10px; border-radius: 8px;
+  border: 0.5px solid #ccc; font-size: 13px;
+  color: #1a1a1a; font-family: inherit;
+}
+textarea.form-input { resize: vertical; }
+.form-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+}

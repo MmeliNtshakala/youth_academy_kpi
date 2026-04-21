@@ -4,76 +4,108 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "meetings")
-public class Meeting {
+@Table(name = "attendance_records")
+public class AttendanceRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // "Sunday Session" or "Special Event"
+    // The meeting this record belongs to
     @Column(nullable = false)
-    private String meetingType;
+    private Long meetingId;
 
-    // Title e.g. "Sunday Session — 20 Apr 2026"
+    // The cadet this record belongs to
     @Column(nullable = false)
-    private String title;
+    private Long cadetId;
 
-    // Which region this meeting is for, or "ALL" for all regions
+    @Column(nullable = false)
+    private String cadetName;
+
+    @Column(nullable = false)
+    private String cadetCode;
+
     @Column(nullable = false)
     private String region;
+
+    // PRESENT, ABSENT, LATE
+    @Column(nullable = false)
+    private String status;
+
+    // Required if status is ABSENT — cannot be left blank
+    private String absenceReason;
 
     @Column(nullable = false)
     private LocalDate meetingDate;
 
-    // Who created this meeting
+    // Who recorded this entry (PM name)
     @Column(nullable = false)
-    private String createdBy;
+    private String recordedBy;
 
-    // Whether register has been completed
-    private boolean registerComplete;
+    // ── Constructors ──────────────────────────────────────────
 
-    private String notes;
+    public AttendanceRecord() {}
 
-
-
-    public Meeting() {}
-
-    public Meeting(String meetingType, String title, String region,
-                   LocalDate meetingDate, String createdBy, String notes) {
-        this.meetingType = meetingType;
-        this.title = title;
+    public AttendanceRecord(Long meetingId, Long cadetId,
+                            String cadetName, String cadetCode,
+                            String region, String status,
+                            String absenceReason, LocalDate meetingDate,
+                            String recordedBy) {
+        this.meetingId = meetingId;
+        this.cadetId = cadetId;
+        this.cadetName = cadetName;
+        this.cadetCode = cadetCode;
         this.region = region;
+        this.status = status;
+        this.absenceReason = absenceReason == null ? "" : absenceReason;
         this.meetingDate = meetingDate;
-        this.createdBy = createdBy;
-        this.registerComplete = false;
-        this.notes = notes == null ? "" : notes;
+        this.recordedBy = recordedBy;
     }
 
+    // ── Validation helper ─────────────────────────────────────
+    // Ensures absent cadets always have a reason recorded.
+    // This is enforced in MeetingService before saving.
 
+    public boolean isValid() {
+        if ("ABSENT".equals(this.status)) {
+            return this.absenceReason != null &&
+                   !this.absenceReason.isBlank();
+        }
+        return true;
+    }
+
+    // ── Getters & Setters ─────────────────────────────────────
 
     public Long getId() { return id; }
 
-    public String getMeetingType() { return meetingType; }
-    public void setMeetingType(String meetingType) { this.meetingType = meetingType; }
+    public Long getMeetingId() { return meetingId; }
+    public void setMeetingId(Long meetingId) { this.meetingId = meetingId; }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public Long getCadetId() { return cadetId; }
+    public void setCadetId(Long cadetId) { this.cadetId = cadetId; }
+
+    public String getCadetName() { return cadetName; }
+    public void setCadetName(String cadetName) { this.cadetName = cadetName; }
+
+    public String getCadetCode() { return cadetCode; }
+    public void setCadetCode(String cadetCode) { this.cadetCode = cadetCode; }
 
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
 
-    public LocalDate getMeetingDate() { return meetingDate; }
-    public void setMeetingDate(LocalDate meetingDate) { this.meetingDate = meetingDate; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-
-    public boolean isRegisterComplete() { return registerComplete; }
-    public void setRegisterComplete(boolean registerComplete) {
-        this.registerComplete = registerComplete;
+    public String getAbsenceReason() { return absenceReason; }
+    public void setAbsenceReason(String absenceReason) {
+        this.absenceReason = absenceReason;
     }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
+    public LocalDate getMeetingDate() { return meetingDate; }
+    public void setMeetingDate(LocalDate meetingDate) {
+        this.meetingDate = meetingDate;
+    }
+
+    public String getRecordedBy() { return recordedBy; }
+    public void setRecordedBy(String recordedBy) { this.recordedBy = recordedBy; }
 }

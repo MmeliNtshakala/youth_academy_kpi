@@ -1,316 +1,875 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+// ── State ─────────────────────────────────────────────────────
+let currentFlagAction = null;
+let flagChart = null;
+let projectChart = null;
+let reportRegionChart = null;
+let currentMeetingId = null;
+let registerEntries = {};
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  background: #f5f5f3;
-  color: #1a1a1a;
-}
-
-.app { display: flex; height: 100vh; }
-
-/* ── Sidebar ── */
-.sidebar {
-  width: 220px; min-width: 220px;
-  background: #fff;
-  border-right: 0.5px solid #e0e0dc;
-  display: flex; flex-direction: column;
-}
-.sidebar-logo {
-  padding: 20px 16px 14px;
-  border-bottom: 0.5px solid #e0e0dc;
-}
-.sidebar-logo h2 { font-size: 15px; font-weight: 500; }
-.sidebar-logo p  { font-size: 11px; color: #888; margin-top: 2px; }
-.nav-section { padding: 12px 8px 0; flex: 1; }
-.nav-label {
-  font-size: 10px; color: #aaa;
-  padding: 0 8px 6px;
-  text-transform: uppercase; letter-spacing: .05em;
-}
-.nav-item {
-  padding: 8px 12px; border-radius: 8px;
-  cursor: pointer; font-size: 13px; color: #555;
-  margin-bottom: 2px; transition: background .1s;
-}
-.nav-item:hover  { background: #f5f5f3; }
-.nav-item.active { background: #f5f5f3; color: #1a1a1a; font-weight: 500; }
-.role-badge {
-  margin: 0 8px 16px; padding: 8px 12px;
-  background: #f5f5f3; border-radius: 8px; font-size: 11px;
-}
-.role-badge .name { font-weight: 500; }
-.role-badge .role { color: #888; }
-
-/* ── Main ── */
-.main { flex: 1; overflow: auto; display: flex; flex-direction: column; }
-.topbar {
-  background: #fff; border-bottom: 0.5px solid #e0e0dc;
-  padding: 14px 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 10;
-}
-.topbar h1 { font-size: 17px; font-weight: 500; }
-.topbar-actions { display: flex; gap: 8px; }
-.content { padding: 20px 24px; flex: 1; }
-
-/* ── Views ── */
-.view { display: none; }
-.view.active { display: block; }
-
-/* ── Metric cards ── */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px; margin-bottom: 20px;
-}
-.metrics-row.three-col { grid-template-columns: repeat(3, 1fr); }
-.metric-card {
-  background: #f0f0ec; border-radius: 8px; padding: 14px 16px;
-}
-.metric-label { font-size: 12px; color: #888; margin-bottom: 6px; }
-.metric-value { font-size: 28px; font-weight: 500; }
-.metric-value.green  { color: #3b6d11; }
-.metric-value.red    { color: #a32d2d; }
-.metric-value.yellow { color: #854f0b; }
-.metric-value.orange { color: #993c1d; }
-.metric-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
-
-/* ── Panels ── */
-.panel {
-  background: #fff; border: 0.5px solid #e0e0dc;
-  border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
-}
-.panel-header {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
-}
-.panel-title { font-size: 14px; font-weight: 500; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-/* ── Filters ── */
-.filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-input, .filter-select {
-  padding: 5px 10px; border-radius: 8px;
-  border: 0.5px solid #ccc; background: #fff;
-  font-size: 12px; color: #1a1a1a; font-family: inherit;
-}
-.filter-input { width: 180px; }
-
-/* ── Table ── */
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  text-align: left; padding: 6px 10px;
-  font-size: 11px; color: #888; font-weight: 400;
-  border-bottom: 0.5px solid #e0e0dc;
-}
-td {
-  padding: 9px 10px; border-bottom: 0.5px solid #e0e0dc;
-  vertical-align: middle;
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: #fafaf8; }
-.table-count { margin-top: 10px; font-size: 11px; color: #aaa; }
-
-/* ── Cadet cell ── */
-.cadet-cell { display: flex; align-items: center; gap: 8px; }
-.avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #dce9f8;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 500; color: #185fa5; flex-shrink: 0;
-}
-.cadet-name { font-weight: 500; font-size: 13px; }
-.cadet-id   { font-size: 11px; color: #aaa; }
-
-/* ── Flag badges ── */
-.flag {
-  display: inline-flex; align-items: center;
-  padding: 3px 8px; border-radius: 20px;
-  font-size: 11px; font-weight: 500;
-}
-.flag-none   { background: #eaf3de; color: #3b6d11; }
-.flag-yellow { background: #faeeda; color: #854f0b; }
-.flag-orange { background: #faece7; color: #993c1d; }
-.flag-red    { background: #fcebeb; color: #a32d2d; }
-
-/* ── Progress bar ── */
-.progress-wrap { display: flex; align-items: center; gap: 6px; }
-.progress-bar {
-  height: 4px; width: 70px;
-  background: #e8e8e4; border-radius: 2px; overflow: hidden;
-}
-.progress-fill { height: 100%; border-radius: 2px; background: #1d9e75; }
-.progress-fill.mid { background: #ba7517; }
-.progress-fill.low { background: #d85a30; }
-.progress-pct { font-size: 11px; color: #888; }
-
-/* ── Buttons ── */
-.action-btns { display: flex; gap: 4px; }
-.icon-btn {
-  padding: 4px 8px; border-radius: 6px;
-  border: 0.5px solid #ddd; background: transparent;
-  cursor: pointer; font-size: 11px; color: #555; font-family: inherit;
-}
-.icon-btn:hover { background: #f5f5f3; color: #1a1a1a; }
-.btn {
-  padding: 7px 14px; border-radius: 8px;
-  border: 0.5px solid #ccc; background: transparent;
-  cursor: pointer; font-size: 13px; color: #1a1a1a; font-family: inherit;
-}
-.btn:hover { background: #f5f5f3; }
-.btn-primary {
-  background: #1a1a1a; color: #fff; border-color: #1a1a1a;
-}
-.btn-primary:hover { opacity: .85; }
-
-/* ── Timeline ── */
-.timeline { display: flex; flex-direction: column; gap: 10px; }
-.tl-item  { display: flex; gap: 10px; align-items: flex-start; }
-.tl-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #ccc; margin-top: 4px; flex-shrink: 0;
-}
-.tl-dot.yellow   { background: #ba7517; }
-.tl-dot.orange   { background: #993c1d; }
-.tl-dot.red      { background: #a32d2d; }
-.tl-dot.restored { background: #3b6d11; }
-.tl-dot.notice   { background: #378add; }
-.tl-dot.plan     { background: #7f77dd; }
-.tl-text { font-size: 12px; color: #555; line-height: 1.5; }
-.tl-text strong { color: #1a1a1a; font-weight: 500; }
-.tl-date { font-size: 11px; color: #aaa; }
-
-/* ── Rules grid ── */
-.rules-grid {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
-  font-size: 12px;
-}
-.rule-card { background: #f5f5f3; border-radius: 8px; padding: 12px; }
-.rule-card p { color: #666; margin-top: 4px; line-height: 1.5; }
-.rule-title { font-weight: 500; margin-bottom: 4px; }
-.yellow-text { color: #854f0b; }
-.orange-text { color: #993c1d; }
-.red-text    { color: #a32d2d; }
-
-/* ── KPI summary ── */
-.stat-row {
-  display: flex; justify-content: space-between;
-  padding: 8px 0; border-bottom: 0.5px solid #e0e0dc; font-size: 13px;
-}
-.stat-row:last-child { border-bottom: none; }
-.stat-key { color: #888; }
-.stat-val { font-weight: 500; }
-
-/* ── Register sheet ── */
-.province-group { margin-bottom: 24px; }
-.province-heading {
-  font-size: 13px; font-weight: 500;
-  color: #1a1a1a; padding: 8px 0 10px;
-  border-bottom: 0.5px solid #e0e0dc;
-  margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
-}
-.province-count {
-  font-size: 11px; font-weight: 400; color: #aaa;
-}
-.register-row {
-  display: grid;
-  grid-template-columns: 36px 1fr 160px 160px 1fr;
-  gap: 10px; align-items: center;
-  padding: 7px 0;
-  border-bottom: 0.5px solid #f0f0ec;
-}
-.register-row:last-child { border-bottom: none; }
-.register-row.absent-row { background: #fffaf7; border-radius: 6px; }
-.reg-num {
-  font-size: 11px; color: #aaa; text-align: right;
-}
-.reg-name { font-size: 13px; }
-.reg-code { font-size: 11px; color: #aaa; }
-.status-btn-group { display: flex; gap: 4px; }
-.status-btn {
-  padding: 4px 10px; border-radius: 20px;
-  border: 0.5px solid #ddd; background: transparent;
-  cursor: pointer; font-size: 11px; font-family: inherit;
-  color: #555; transition: all .1s;
-}
-.status-btn:hover { border-color: #aaa; }
-.status-btn.selected-present {
-  background: #eaf3de; color: #3b6d11; border-color: #b5d97a;
-}
-.status-btn.selected-absent {
-  background: #fcebeb; color: #a32d2d; border-color: #f09595;
-}
-.status-btn.selected-late {
-  background: #faeeda; color: #854f0b; border-color: #fac775;
-}
-.reason-input {
-  width: 100%; padding: 5px 8px; border-radius: 6px;
-  border: 0.5px solid #f09595; background: #fffaf7;
-  font-size: 12px; color: #1a1a1a; font-family: inherit;
-}
-.reason-input::placeholder { color: #d85a30; }
-.reason-input.filled { border-color: #ccc; background: #fff; }
-
-/* ── Register header row ── */
-.register-header {
-  display: grid;
-  grid-template-columns: 36px 1fr 160px 160px 1fr;
-  gap: 10px; padding: 0 0 6px;
-  font-size: 11px; color: #aaa;
-  border-bottom: 0.5px solid #e0e0dc;
-  margin-bottom: 8px;
+// ── Top action button ─────────────────────────────────────────
+function handleTopAction() {
+  const view = document.querySelector('.view.active').id;
+  if (view === 'view-register') {
+    document.getElementById('reg-date').value =
+      new Date().toISOString().split('T')[0];
+    window.scrollTo(0, 0);
+  } else {
+    openModal();
+  }
 }
 
-/* ── Banner ── */
-.banner {
-  padding: 10px 14px; border-radius: 8px;
-  font-size: 13px; margin-bottom: 14px;
-}
-.banner-error   { background: #fcebeb; color: #a32d2d; }
-.banner-success { background: #eaf3de; color: #3b6d11; }
-.banner-warning { background: #faeeda; color: #854f0b; }
+// ── View switching ────────────────────────────────────────────
+function showView(id, el) {
+  document.querySelectorAll('.view')
+    .forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item')
+    .forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
 
-/* ── Meeting status badge ── */
-.meeting-status {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: 20px; font-size: 11px;
-}
-.meeting-done    { background: #eaf3de; color: #3b6d11; }
-.meeting-pending { background: #faeeda; color: #854f0b; }
+  const titles = {
+    dashboard: 'Dashboard',
+    cadets:    'Cadet registry',
+    flags:     'Flags & actions',
+    register:  'Register',
+    reports:   'Reports'
+  };
+  document.getElementById('page-title').textContent = titles[id];
 
-/* ── Pending register card ── */
-.pending-card {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 0; border-bottom: 0.5px solid #e0e0dc; font-size: 12px;
-}
-.pending-card:last-child { border-bottom: none; }
+  const btn = document.getElementById('top-action-btn');
+  btn.textContent = id === 'register' ? '+ New meeting' : '+ Add cadet';
 
-/* ── Modal ── */
-.modal-bg {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.4); z-index: 100;
-  align-items: center; justify-content: center;
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'cadets')    loadCadets();
+  if (id === 'flags')     loadFlagView();
+  if (id === 'register')  loadRegisterLanding();
+  if (id === 'reports')   loadReports();
 }
-.modal-bg.open { display: flex; }
-.modal {
-  background: #fff; border-radius: 12px; padding: 24px;
-  width: 460px; max-width: 95vw; border: 0.5px solid #ccc;
+
+// ── API helpers ───────────────────────────────────────────────
+async function get(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('GET failed: ' + url);
+  return res.json();
 }
-.modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
-.form-row { margin-bottom: 12px; }
-.form-row label {
-  display: block; font-size: 12px; color: #888; margin-bottom: 4px;
+
+async function post(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('POST failed: ' + url);
+  return res.json();
 }
-.form-input {
-  width: 100%; padding: 7px 10px; border-radius: 8px;
-  border: 0.5px solid #ccc; font-size: 13px;
-  color: #1a1a1a; font-family: inherit;
+
+// ── Dashboard ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const data = await get('/api/dashboard');
+    document.getElementById('m-total').textContent = data.totalCadets;
+    document.getElementById('m-active').textContent = data.activeCount;
+    document.getElementById('m-flagged').textContent =
+      data.yellowCount + data.orangeCount + data.redCount;
+    document.getElementById('m-attendance').textContent =
+      data.averageAttendance + '%';
+    renderFlagChart(data);
+    renderProjectChart(data.attendanceByProject);
+    renderRecentActivity(data.recentActivity);
+  } catch (e) { console.error('Dashboard load failed:', e); }
 }
-textarea.form-input { resize: vertical; }
-.form-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.modal-footer {
-  display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+
+function renderFlagChart(data) {
+  const ctx = document.getElementById('flagChart').getContext('2d');
+  if (flagChart) flagChart.destroy();
+  flagChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['No flag', 'Yellow', 'Orange', 'Red'],
+      datasets: [{
+        data: [data.activeCount, data.yellowCount,
+               data.orangeCount, data.redCount],
+        backgroundColor: ['#639922','#EF9F27','#D85A30','#E24B4A'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 12 } } }
+      }
+    }
+  });
 }
+
+function renderProjectChart(byProject) {
+  const ctx = document.getElementById('projectChart').getContext('2d');
+  if (projectChart) projectChart.destroy();
+  const labels = Object.keys(byProject);
+  const values = Object.values(byProject);
+  projectChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Avg attendance %',
+        data: values,
+        backgroundColor: ['#378ADD','#1D9E75','#7F77DD','#EF9F27'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { min: 0, max: 100,
+        ticks: { callback: v => v + '%' } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderRecentActivity(events) {
+  const el = document.getElementById('recent-activity');
+  if (!events || events.length === 0) {
+    el.innerHTML =
+      '<p style="color:#aaa;font-size:12px">No recent activity.</p>';
+    return;
+  }
+  const dotClass = {
+    YELLOW: 'yellow', ORANGE: 'orange', RED: 'red',
+    RESTORED: 'restored', NOTICE_SENT: 'notice', PLAN_AGREED: 'plan'
+  };
+  el.innerHTML = `<div class="timeline">` +
+    events.map(e => `
+      <div class="tl-item">
+        <div class="tl-dot ${dotClass[e.eventType] || ''}"></div>
+        <div>
+          <div class="tl-text">
+            <strong>${e.cadetName}</strong> — ${e.description}
+          </div>
+          <div class="tl-date">${e.eventDate} · ${e.triggeredBy}</div>
+        </div>
+      </div>`).join('') + `</div>`;
+}
+
+// ── Cadets ────────────────────────────────────────────────────
+async function loadCadets() {
+  const search  = document.getElementById('search').value.trim();
+  const flag    = document.getElementById('filter-flag').value;
+  const project = document.getElementById('filter-project').value;
+  let url = '/api/cadets?';
+  if (search)  url += 'search=' + encodeURIComponent(search) + '&';
+  if (flag)    url += 'flag='   + encodeURIComponent(flag) + '&';
+  if (project) url += 'project='+ encodeURIComponent(project) + '&';
+  try {
+    const cadets = await get(url);
+    renderCadetTable(cadets);
+  } catch (e) { console.error('Cadets load failed:', e); }
+}
+
+function renderCadetTable(cadets) {
+  const tbody = document.getElementById('cadet-table');
+  const count = document.getElementById('table-count');
+  tbody.innerHTML = cadets.slice(0, 50).map(c => `
+    <tr>
+      <td>
+        <div class="cadet-cell">
+          <div class="avatar">${initials(c.fullName)}</div>
+          <div>
+            <div class="cadet-name">${c.fullName}</div>
+            <div class="cadet-id">${c.cadetCode}</div>
+          </div>
+        </div>
+      </td>
+      <td>${c.project}</td>
+      <td>${flagBadge(c.flagStatus)}</td>
+      <td>${progressBar(c.attendancePercent)}</td>
+      <td style="color:#aaa;font-size:12px">
+        ${c.lastContactDate || '—'}
+      </td>
+      <td style="font-size:12px">${c.projectManager}</td>
+      <td><div class="action-btns">${actionButtons(c)}</div></td>
+    </tr>`).join('');
+  count.textContent = 'Showing ' + Math.min(cadets.length, 50) +
+    ' of ' + cadets.length + ' cadets';
+}
+
+function actionButtons(c) {
+  const btns = [];
+  if (c.flagStatus === 'NONE' || c.flagStatus === 'YELLOW')
+    btns.push(`<button class="icon-btn"
+      onclick="openFlagModal(${c.id},'yellow')">Yellow</button>`);
+  if (c.flagStatus === 'YELLOW')
+    btns.push(`<button class="icon-btn"
+      onclick="openFlagModal(${c.id},'orange')">Orange</button>`);
+  if (c.flagStatus === 'ORANGE')
+    btns.push(`<button class="icon-btn"
+      onclick="openFlagModal(${c.id},'red')">Red</button>`);
+  if (c.flagStatus === 'RED')
+    btns.push(`<button class="icon-btn"
+      onclick="openFlagModal(${c.id},'restore')">Restore</button>`);
+  return btns.join('');
+}
+
+// ── Flags ─────────────────────────────────────────────────────
+async function loadFlagView() {
+  try {
+    const data    = await get('/api/dashboard');
+    document.getElementById('f-yellow').textContent = data.yellowCount;
+    document.getElementById('f-orange').textContent = data.orangeCount;
+    document.getElementById('f-red').textContent    = data.redCount;
+    const y = await get('/api/cadets?flag=YELLOW');
+    const o = await get('/api/cadets?flag=ORANGE');
+    const r = await get('/api/cadets?flag=RED');
+    renderFlagTable([...y, ...o, ...r]);
+  } catch (e) { console.error('Flag view failed:', e); }
+}
+
+function renderFlagTable(cadets) {
+  document.getElementById('flag-table').innerHTML =
+    cadets.map(c => `
+      <tr>
+        <td>
+          <div class="cadet-cell">
+            <div class="avatar">${initials(c.fullName)}</div>
+            <div>
+              <div class="cadet-name">${c.fullName}</div>
+              <div class="cadet-id">${c.cadetCode}</div>
+            </div>
+          </div>
+        </td>
+        <td>${flagBadge(c.flagStatus)}</td>
+        <td style="font-size:12px">${c.daysSinceFlag}d</td>
+        <td style="font-size:12px">${c.project}</td>
+        <td style="font-size:12px">${c.projectManager}</td>
+        <td><div class="action-btns">${actionButtons(c)}</div></td>
+      </tr>`).join('');
+}
+
+// ── Register landing ──────────────────────────────────────────
+async function loadRegisterLanding() {
+  backToLanding();
+  document.getElementById('reg-date').value =
+    new Date().toISOString().split('T')[0];
+  loadMeetings();
+  loadIncomplete();
+}
+
+async function loadMeetings() {
+  const region =
+    document.getElementById('meeting-region-filter').value;
+  let url = '/api/meetings';
+  if (region) url += '?region=' + encodeURIComponent(region);
+  try {
+    const meetings = await get(url);
+    renderMeetingsTable(meetings);
+  } catch (e) { console.error('Meetings load failed:', e); }
+}
+
+function renderMeetingsTable(meetings) {
+  const tbody = document.getElementById('meetings-table');
+  if (meetings.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"
+      style="color:#aaa;font-size:12px;padding:12px 10px">
+      No meetings yet. Create one above.
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = meetings.map(m => `
+    <tr>
+      <td style="font-weight:500;font-size:13px">${m.title}</td>
+      <td style="font-size:12px;color:#888">${m.meetingType}</td>
+      <td style="font-size:12px">${m.region}</td>
+      <td style="font-size:12px;color:#888">${m.meetingDate}</td>
+      <td>
+        <span class="meeting-status
+          ${m.registerComplete ? 'meeting-done' : 'meeting-pending'}">
+          ${m.registerComplete ? 'Complete' : 'Pending'}
+        </span>
+      </td>
+      <td>
+        <button class="icon-btn"
+          onclick="openRegisterSheet(${m.id}, '${m.title}',
+            '${m.meetingDate}', '${m.region}')">
+          ${m.registerComplete ? 'View' : 'Take register'}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadIncomplete() {
+  try {
+    const list = await get('/api/meetings/incomplete');
+    const el = document.getElementById('incomplete-list');
+    if (list.length === 0) {
+      el.innerHTML =
+        '<p style="color:#aaa;font-size:12px">All registers are up to date.</p>';
+      return;
+    }
+    el.innerHTML = list.map(m => `
+      <div class="pending-card">
+        <div>
+          <div style="font-weight:500">${m.title}</div>
+          <div style="color:#aaa;font-size:11px">
+            ${m.region} · ${m.meetingDate}
+          </div>
+        </div>
+        <button class="icon-btn"
+          onclick="openRegisterSheet(${m.id}, '${m.title}',
+            '${m.meetingDate}', '${m.region}')">
+          Take register
+        </button>
+      </div>`).join('');
+  } catch (e) { console.error('Incomplete load failed:', e); }
+}
+
+async function createMeeting() {
+  const body = {
+    meetingType: document.getElementById('reg-type').value,
+    title:       document.getElementById('reg-title').value.trim(),
+    region:      document.getElementById('reg-region').value,
+    meetingDate: document.getElementById('reg-date').value,
+    createdBy:   document.getElementById('reg-created-by').value.trim()
+                 || 'Admin',
+    notes:       document.getElementById('reg-notes').value.trim()
+  };
+  if (!body.meetingDate) {
+    alert('Please select a date.'); return;
+  }
+  try {
+    const result = await post('/api/meetings', body);
+    if (result.success) {
+      document.getElementById('reg-title').value = '';
+      document.getElementById('reg-notes').value = '';
+      loadMeetings();
+      loadIncomplete();
+    } else {
+      alert(result.message);
+    }
+  } catch (e) { alert('Failed to create meeting.'); }
+}
+
+// ── Register sheet ────────────────────────────────────────────
+async function openRegisterSheet(meetingId, title, date, region) {
+  currentMeetingId = meetingId;
+  registerEntries = {};
+
+  document.getElementById('register-landing').style.display = 'none';
+  document.getElementById('register-sheet').style.display  = 'block';
+  document.getElementById('sheet-title').textContent = title;
+  document.getElementById('sheet-subtitle').textContent =
+    region + ' · ' + date;
+  document.getElementById('register-banner').style.display = 'none';
+  document.getElementById('register-groups').innerHTML =
+    '<p style="color:#aaa;font-size:13px">Loading cadets...</p>';
+
+  try {
+    const data = await get('/api/meetings/' + meetingId + '/register');
+    renderRegisterGroups(data.register);
+  } catch (e) {
+    document.getElementById('register-groups').innerHTML =
+      '<p style="color:#a32d2d;font-size:13px">Failed to load register.</p>';
+  }
+}
+
+function backToLanding() {
+  document.getElementById('register-landing').style.display = 'block';
+  document.getElementById('register-sheet').style.display  = 'none';
+  currentMeetingId = null;
+  registerEntries  = {};
+}
+
+function renderRegisterGroups(grouped) {
+  const container = document.getElementById('register-groups');
+  const regions = ['Gauteng','KwaZulu-Natal','Western Cape','Eastern Cape'];
+  let html = '';
+
+  for (const region of regions) {
+    const cadets = grouped[region];
+    if (!cadets || cadets.length === 0) continue;
+
+    html += `
+      <div class="province-group" id="group-${region.replace(/\s/g,'-')}">
+        <div class="province-heading">
+          ${region}
+          <span class="province-count">${cadets.length} cadets</span>
+        </div>
+        <div class="register-header">
+          <span></span>
+          <span>Cadet</span>
+          <span>Status</span>
+          <span>Absence reason</span>
+          <span></span>
+        </div>`;
+
+    cadets.forEach((c, i) => {
+      // Initialise entry state
+      registerEntries[c.cadetId] = {
+        cadetId:       c.cadetId,
+        cadetCode:     c.cadetCode,
+        fullName:      c.fullName,
+        region:        region,
+        status:        c.status || '',
+        absenceReason: c.absenceReason || ''
+      };
+
+      const isAbsent = c.status === 'ABSENT';
+      html += `
+        <div class="register-row ${isAbsent ? 'absent-row' : ''}"
+          id="row-${c.cadetId}">
+          <span class="reg-num">${i + 1}</span>
+          <div>
+            <div class="reg-name">${c.fullName}</div>
+            <div class="reg-code">${c.cadetCode}</div>
+          </div>
+          <div class="status-btn-group">
+            <button class="status-btn
+              ${c.status==='PRESENT' ? 'selected-present' : ''}"
+              onclick="setStatus(${c.cadetId},'PRESENT')">
+              Present
+            </button>
+            <button class="status-btn
+              ${c.status==='ABSENT' ? 'selected-absent' : ''}"
+              onclick="setStatus(${c.cadetId},'ABSENT')">
+              Absent
+            </button>
+            <button class="status-btn
+              ${c.status==='LATE' ? 'selected-late' : ''}"
+              onclick="setStatus(${c.cadetId},'LATE')">
+              Late
+            </button>
+          </div>
+          <div>
+            <input
+              class="reason-input ${c.absenceReason ? 'filled' : ''}"
+              id="reason-${c.cadetId}"
+              placeholder="${isAbsent
+                ? 'Required — enter reason'
+                : 'Only needed if absent'}"
+              value="${c.absenceReason || ''}"
+              style="${isAbsent ? '' : 'display:none'}"
+              oninput="setReason(${c.cadetId}, this.value)">
+          </div>
+          <div></div>
+        </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  container.innerHTML = html || '<p style="color:#aaa">No cadets found.</p>';
+}
+
+function setStatus(cadetId, status) {
+  if (!registerEntries[cadetId]) return;
+  registerEntries[cadetId].status = status;
+
+  const row = document.getElementById('row-' + cadetId);
+  const reasonInput = document.getElementById('reason-' + cadetId);
+  const btns = row.querySelectorAll('.status-btn');
+
+  // Update button styles
+  btns.forEach(b => {
+    b.classList.remove(
+      'selected-present', 'selected-absent', 'selected-late'
+    );
+  });
+  if (status === 'PRESENT') btns[0].classList.add('selected-present');
+  if (status === 'ABSENT')  btns[1].classList.add('selected-absent');
+  if (status === 'LATE')    btns[2].classList.add('selected-late');
+
+  // Show/hide reason input
+  if (status === 'ABSENT') {
+    reasonInput.style.display = 'block';
+    reasonInput.placeholder   = 'Required — enter reason';
+    row.classList.add('absent-row');
+  } else {
+    reasonInput.style.display = 'none';
+    reasonInput.value         = '';
+    registerEntries[cadetId].absenceReason = '';
+    row.classList.remove('absent-row');
+  }
+}
+
+function setReason(cadetId, value) {
+  if (!registerEntries[cadetId]) return;
+  registerEntries[cadetId].absenceReason = value;
+  const input = document.getElementById('reason-' + cadetId);
+  if (value.trim()) {
+    input.classList.add('filled');
+  } else {
+    input.classList.remove('filled');
+  }
+}
+
+function filterSheetRows() {
+  const q = document.getElementById('sheet-search')
+    .value.toLowerCase();
+  document.querySelectorAll('.register-row').forEach(row => {
+    const name = row.querySelector('.reg-name');
+    if (!name) return;
+    row.style.display =
+      name.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+async function submitRegister() {
+  const recordedBy =
+    document.getElementById('register-recorded-by').value.trim();
+  if (!recordedBy) {
+    showBanner('error',
+      'Please enter your name in the "Recorded by" field before submitting.');
+    return;
+  }
+
+  const entries = Object.values(registerEntries);
+  const noStatus = entries.filter(e => !e.status);
+  if (noStatus.length > 0) {
+    showBanner('error',
+      'Please mark a status for all cadets before submitting. ' +
+      noStatus.length + ' cadet(s) have no status selected.');
+    return;
+  }
+
+  const missingReason = entries.filter(
+    e => e.status === 'ABSENT' &&
+    (!e.absenceReason || !e.absenceReason.trim())
+  );
+  if (missingReason.length > 0) {
+    showBanner('error',
+      'Absence reason is required for: ' +
+      missingReason.map(e => e.fullName).join(', ') +
+      '. You cannot submit until all absent cadets have a reason.');
+    // Highlight missing reason fields
+    missingReason.forEach(e => {
+      const input = document.getElementById('reason-' + e.cadetId);
+      if (input) {
+        input.style.borderColor = '#e24b4a';
+        input.focus();
+      }
+    });
+    return;
+  }
+
+  try {
+    const result = await post(
+      '/api/meetings/' + currentMeetingId + '/register',
+      { recordedBy, entries }
+    );
+
+    if (result.success) {
+      let msg = 'Register submitted successfully. ' +
+        result.saved + ' records saved.';
+      let type = 'success';
+
+      if (result.autoFlagged && result.autoFlagged.length > 0) {
+        msg += ' Yellow Flag auto-issued for: ' +
+          result.autoFlagged.join(', ') +
+          ' — 2 consecutive absences.';
+        type = 'warning';
+      }
+
+      showBanner(type, msg);
+      loadMeetings();
+      loadIncomplete();
+    } else {
+      showBanner('error', result.message);
+    }
+  } catch (e) {
+    showBanner('error', 'Submission failed. Please try again.');
+  }
+}
+
+function showBanner(type, msg) {
+  const el = document.getElementById('register-banner');
+  el.className = 'banner banner-' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Reports ───────────────────────────────────────────────────
+async function loadReports() {
+  try {
+    const data = await get('/api/dashboard');
+    const flagged =
+      data.yellowCount + data.orangeCount + data.redCount;
+    const pct = v =>
+      Math.round(v / data.totalCadets * 100) + '%';
+    const stats = [
+      ['Total cadets enrolled',      data.totalCadets],
+      ['In good standing (no flag)', data.activeCount +
+        ' (' + pct(data.activeCount) + ')'],
+      ['Yellow flag',                data.yellowCount +
+        ' (' + pct(data.yellowCount) + ')'],
+      ['Orange flag',                data.orangeCount +
+        ' (' + pct(data.orangeCount) + ')'],
+      ['Red flag',                   data.redCount +
+        ' (' + pct(data.redCount) + ')'],
+      ['Total under flag',           flagged +
+        ' (' + pct(flagged) + ')'],
+      ['Under correction',           data.underCorrection],
+      ['Average attendance',         data.averageAttendance + '%'],
+      ['Programme duration',         '12 months'],
+    ];
+    document.getElementById('kpi-summary').innerHTML =
+      stats.map(([k, v]) => `
+        <div class="stat-row">
+          <span class="stat-key">${k}</span>
+          <span class="stat-val">${v}</span>
+        </div>`).join('');
+
+    // Region attendance chart
+    try {
+      const regionData = await get('/api/meetings/region-summary');
+      const byRegion = regionData.byRegion || {};
+      const ctx = document
+        .getElementById('reportRegionChart').getContext('2d');
+      if (reportRegionChart) reportRegionChart.destroy();
+      reportRegionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(byRegion),
+          datasets: [{
+            label: 'Attendance %',
+            data: Object.values(byRegion),
+            backgroundColor:
+              ['#378ADD','#1D9E75','#7F77DD','#EF9F27'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { min: 0, max: 100,
+            ticks: { callback: v => v + '%' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    } catch (e) {
+      document.getElementById('reportRegionChart')
+        .parentElement.innerHTML =
+        '<p style="color:#aaa;font-size:12px;padding:12px">No attendance data yet. Take register first.</p>';
+    }
+
+  } catch (e) { console.error('Reports load failed:', e); }
+}
+
+// Cadet attendance lookup
+async function searchCadetReport() {
+  const q = document.getElementById('report-search').value.trim();
+  if (q.length < 2) {
+    document.getElementById('report-cadet-results').innerHTML = '';
+    return;
+  }
+  try {
+    const cadets = await get(
+      '/api/cadets?search=' + encodeURIComponent(q)
+    );
+    document.getElementById('report-cadet-results').innerHTML =
+      cadets.slice(0, 8).map(c => `
+        <div class="pending-card" style="cursor:pointer"
+          onclick="loadCadetReport(${c.id})">
+          <div>
+            <div style="font-weight:500">${c.fullName}</div>
+            <div style="color:#aaa;font-size:11px">
+              ${c.cadetCode} · ${c.project}
+            </div>
+          </div>
+          <span style="font-size:12px;color:#888">
+            ${c.attendancePercent}% attendance
+          </span>
+        </div>`).join('');
+  } catch (e) { console.error('Search failed:', e); }
+}
+
+async function loadCadetReport(cadetId) {
+  try {
+    const data = await get(
+      '/api/meetings/cadet/' + cadetId + '/report'
+    );
+    const el = document.getElementById('report-cadet-detail');
+    el.innerHTML = `
+      <div style="margin-top:16px;padding-top:16px;
+        border-top:0.5px solid #e0e0dc">
+        <div style="display:flex;align-items:center;
+          gap:12px;margin-bottom:14px">
+          <div class="avatar" style="width:36px;height:36px;
+            font-size:12px">
+            ${initials(data.cadet.fullName)}
+          </div>
+          <div>
+            <div style="font-weight:500">${data.cadet.fullName}</div>
+            <div style="font-size:12px;color:#aaa">
+              ${data.cadet.cadetCode} · ${data.cadet.project}
+            </div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:20px;
+            text-align:center">
+            <div>
+              <div style="font-size:20px;font-weight:500;color:#3b6d11">
+                ${data.attendancePct}%
+              </div>
+              <div style="font-size:11px;color:#aaa">attendance</div>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:500">
+                ${data.attended}/${data.totalMeetings}
+              </div>
+              <div style="font-size:11px;color:#aaa">meetings</div>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:500;
+                color:${data.absences > 0 ? '#a32d2d' : '#1a1a1a'}">
+                ${data.absences}
+              </div>
+              <div style="font-size:11px;color:#aaa">absences</div>
+            </div>
+          </div>
+        </div>
+        ${data.history.length === 0
+          ? '<p style="color:#aaa;font-size:12px">No attendance records yet.</p>'
+          : `<table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Recorded by</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.history.map(r => `
+                  <tr>
+                    <td style="font-size:12px">${r.meetingDate}</td>
+                    <td>${attendanceBadge(r.status)}</td>
+                    <td style="font-size:12px;color:#888">
+                      ${r.absenceReason || '—'}
+                    </td>
+                    <td style="font-size:12px;color:#aaa">
+                      ${r.recordedBy}
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`}
+      </div>`;
+  } catch (e) { console.error('Cadet report failed:', e); }
+}
+
+function attendanceBadge(status) {
+  const map = {
+    PRESENT: ['flag-none',   'Present'],
+    ABSENT:  ['flag-red',    'Absent'],
+    LATE:    ['flag-yellow', 'Late']
+  };
+  const [cls, label] = map[status] || ['', status];
+  return `<span class="flag ${cls}">${label}</span>`;
+}
+
+// ── Add cadet modal ───────────────────────────────────────────
+function openModal()  {
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+async function submitNewCadet() {
+  const body = {
+    cadetCode:         document.getElementById('new-code').value.trim(),
+    fullName:          document.getElementById('new-name').value.trim(),
+    project:           document.getElementById('new-project').value,
+    attendancePercent: parseInt(document.getElementById('new-att').value) || 80,
+    projectManager:    document.getElementById('new-pm').value.trim(),
+    flagStatus:        'NONE',
+    lastContactDate:   new Date().toISOString().split('T')[0]
+  };
+  if (!body.fullName || !body.cadetCode) {
+    alert('Please enter a full name and cadet ID.'); return;
+  }
+  try {
+    await post('/api/cadets', body);
+    closeModal();
+    loadCadets();
+    loadDashboard();
+  } catch (e) { alert('Failed to add cadet.'); }
+}
+
+// ── Flag modal ────────────────────────────────────────────────
+function openFlagModal(cadetId, action) {
+  currentFlagAction = { cadetId, action };
+  const titles = {
+    yellow:  'Issue Yellow Flag',
+    orange:  'Escalate to Orange Flag',
+    red:     'Escalate to Red Flag',
+    restore: 'Restore cadet status'
+  };
+  document.getElementById('flag-modal-title').textContent =
+    titles[action];
+  document.getElementById('flag-reason-row').style.display =
+    action === 'restore' || action === 'orange' ? 'none' : 'block';
+  document.getElementById('flag-notes-row').style.display =
+    action === 'restore' ? 'block' : 'none';
+  document.getElementById('flag-modal').classList.add('open');
+}
+
+function closeFlagModal() {
+  document.getElementById('flag-modal').classList.remove('open');
+  currentFlagAction = null;
+}
+
+async function submitFlagAction() {
+  if (!currentFlagAction) return;
+  const { cadetId, action } = currentFlagAction;
+  const triggeredBy =
+    document.getElementById('flag-triggered-by').value.trim() || 'Admin';
+  const reason =
+    document.getElementById('flag-reason').value.trim() ||
+    'No reason provided.';
+  const notes =
+    document.getElementById('flag-notes').value.trim() || '';
+  try {
+    if (action === 'yellow')
+      await post(`/api/cadets/${cadetId}/flag/yellow`,
+        { triggeredBy, reason });
+    else if (action === 'orange')
+      await post(`/api/cadets/${cadetId}/flag/orange`, { triggeredBy });
+    else if (action === 'red')
+      await post(`/api/cadets/${cadetId}/flag/red`, { triggeredBy, reason });
+    else if (action === 'restore')
+      await post(`/api/cadets/${cadetId}/restore`, { triggeredBy, notes });
+    closeFlagModal();
+    loadCadets();
+    loadFlagView();
+    loadDashboard();
+  } catch (e) { alert('Action failed.'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function initials(name) {
+  return (name || '').split(' ')
+    .map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+
+function flagBadge(status) {
+  const map = {
+    NONE:   ['flag-none',   'No flag'],
+    YELLOW: ['flag-yellow', 'Yellow'],
+    ORANGE: ['flag-orange', 'Orange'],
+    RED:    ['flag-red',    'Red']
+  };
+  const [cls, label] = map[status] || ['flag-none', status];
+  return `<span class="flag ${cls}">${label}</span>`;
+}
+
+function progressBar(v) {
+  const cls = v < 50 ? 'low' : v < 70 ? 'mid' : '';
+  return `
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill ${cls}" style="width:${v}%"></div>
+      </div>
+      <span class="progress-pct">${v}%</span>
+    </div>`;
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadDashboard();

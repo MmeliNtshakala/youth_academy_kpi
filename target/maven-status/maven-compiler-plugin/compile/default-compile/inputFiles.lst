@@ -1,8 +1,14 @@
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/FlagEventRepository.java
-/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/data/DataSeeder.java
-/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/CadetRepository.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/AttendanceRepository.java
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/service/CadetService.java
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/FlagEvent.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/Meeting.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/controller/MeetingController.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/service/MeetingService.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/AttendanceRecord.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/data/DataSeeder.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/CadetRepository.java
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/TrshKpiApplication.java
+/home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/repository/MeetingRepository.java
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/model/Cadet.java
 /home/mmeli/youth_academy_kpi/src/main/java/com/trsh/kpi/controller/CadetController.java
