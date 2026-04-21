@@ -27,6 +27,9 @@
         <div class="nav-item" onclick="showView('flags', this)">
           Flags &amp; Actions
         </div>
+        <div class="nav-item" onclick="showView('register', this)">
+          Register
+        </div>
         <div class="nav-item" onclick="showView('reports', this)">
           Reports
         </div>
@@ -37,7 +40,7 @@
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN-->
     <div class="main">
 
       <!-- TOP BAR -->
@@ -71,7 +74,7 @@
             <div class="metric-card">
               <div class="metric-label">Avg attendance</div>
               <div class="metric-value" id="m-attendance">—</div>
-              <div class="metric-sub">Across all projects</div>
+              <div class="metric-sub">Across all regions</div>
             </div>
           </div>
 
@@ -84,7 +87,7 @@
             </div>
             <div class="panel">
               <div class="panel-header">
-                <span class="panel-title">Attendance by project</span>
+                <span class="panel-title">Attendance by region</span>
               </div>
               <canvas id="projectChart" height="220"></canvas>
             </div>
@@ -119,11 +122,15 @@
                 </select>
                 <select class="filter-select"
                   id="filter-project" onchange="loadCadets()">
-                  <option value="">All projects</option>
-                  <option>Code of conduct</option>
-                  <option>Awards</option>
-                  <option>Alumni</option>
-                  <option>Disciplinary</option>
+                  <option value="">All regions</option>
+                  <option>eMazweni</option>
+                  <option>eMangalisweni</option>
+                  <option>eZenzweni</option>
+                  <option>Gauteng</option>
+                  <option>Botswana</option>
+                  <option>Zimbabwe</option>
+                  <option>Mozambique</option>
+                  <option>International</option>
                 </select>
               </div>
             </div>
@@ -131,7 +138,7 @@
               <thead>
                 <tr>
                   <th>Cadet</th>
-                  <th>Project</th>
+                  <th>Region</th>
                   <th>Flag</th>
                   <th>Attendance</th>
                   <th>Last contact</th>
@@ -175,7 +182,7 @@
                   <th>Cadet</th>
                   <th>Flag</th>
                   <th>Days since flag</th>
-                  <th>Project</th>
+                  <th>Region</th>
                   <th>Liason</th>
                   <th>Actions</th>
                 </tr>
@@ -208,13 +215,184 @@
           </div>
         </div>
 
+        <div id="view-register"  class="view">
+          <div id="register-landing">
+            <div class="two-col" style="margin-bottom: 16px">
+
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">Create meeting</span>
+                </div>
+                <div class="form-row">
+                  <label>Meeting type</label>
+                  <select class="form-input" id="reg-type">
+                    <option>Sunday Imfundiso</option>
+                    <option>Provincial Meeting</option>
+                    <option>National Meeting</option>
+                    <option>Special Event</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label>Title (optional)</label>
+                  <input class="form-input" id="reg-title"
+                    placeholder="Leave blank to auto-generate">
+                </div>
+                <div class="form-row">
+                  <label>Region</label>
+                  <select class="form-input" id="reg-region">
+                    <option value="ALL">All regions</option>
+                    <option>Gauteng</option>
+                    <option>eMazweni</option>
+                    <option>eMangalisweni</option></optiom></option>
+                    <option>eZenzweni</option>
+                    <option>Zimbabwe</option>
+                    <option>Mozambique</option>
+                    <option>Botswana</option>
+                    <option>International</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label>Date</label>
+                  <input class="form-input" id="reg-date" type="date">
+                </div>
+                <div class="form-row">
+                  <label>Created by</label>
+                  <input class="form-input" id="reg-created-by"
+                    placeholder="e.g. Liason name">
+                </div>
+                <div class="form-row">
+                  <label>Notes (optional)</label>
+                  <input class="form-input" id="reg-notes"
+                    placeholder="e.g. Meeting Agenda">
+                </div>
+                <button class="btn btn-primary"
+                  style="width:100%;margin-top:4px"
+                  onclick="createMeeting()">
+                  Create meeting
+                </button>
+              </div>
+
+              <!-- Incomplete register-->
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">Pending registers</span>
+                </div>
+                <div id="incomplete">
+                  <p style="color:#aaa;font-size:12px">
+                    Loading...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">All meetings</span>
+                <select class="filter-select"
+                  id="meeting-region-filter"
+                  onchange="loadMeetings()">
+                  <option value="">All regions</option>
+                  <option>Gauteng</option>
+                  <option>eMazweni</option>
+                  <option>eMangalisweni</option>
+                  <option>eZenzweni</option>
+                  <option>Zimbabwe</option>
+                  <option>Mozambique</option>
+                  <option>Botswana</option>
+                  <option>International</option>
+                </select>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Region</th>
+                    <th>Date</th>
+                    <th>Register</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="meetings-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="register-sheet" style="display:none">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title" id="sheet-title">
+                    Taking register...
+                  </div>
+                  <div style="font-size:12px;color:#aaa;margin-top:2px"
+                    id="sheet-subtitle"></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input class="filter-input" id="sheet-search"
+                    placeholder="Search cadet..."
+                    oninput="filterSheetRows()">
+                  <button class="btn" onclick="backToLanding()">
+                    Back
+                  </button>
+                  <button class="btn btn-primary"
+                    onclick="submitRegister()">
+                    Submit register
+                  </button>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;
+                gap:12px;margin-bottom:16px;
+                padding:10px 12px;background:#f5f5f3;
+                border-radius:8px">
+                <span style="font-size:12px;color:#888;
+                  white-space:nowrap">Recorded by</span>
+                <input class="form-input"
+                  id="register-recorded-by"
+                  placeholder="Enter your name (PM)"
+                  style="max-width:240px">
+                <span style="font-size:12px;color:#aaa">
+                  — required before submitting
+                </span>
+              </div>
+
+              <!-- Error / success banner -->
+              <div id="register-banner" style="display:none"></div>
+
+              <!-- Province groups rendered here -->
+              <div id="register-groups"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- REPORTS VIEW -->
-        <div id="view-reports" class="view">
+        div id="view-reports" class="view">
           <div class="panel">
             <div class="panel-header">
-              <span class="panel-title">KPI summary — 12-month programme</span>
+              <span class="panel-title">
+                KPI summary — 12-month programme
+              </span>
             </div>
             <div id="kpi-summary"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Attendance by region</span>
+            </div>
+            <canvas id="reportRegionChart" height="200"></canvas>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Cadet attendance lookup</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <input class="filter-input" id="report-search"
+                placeholder="Search cadet name..."
+                style="width:240px"
+                oninput="searchCadetReport()">
+            </div>
+            <div id="report-cadet-results"></div>
+            <div id="report-cadet-detail"></div>
           </div>
         </div>
 
