@@ -206,7 +206,7 @@ public class CadetService {
 
         result.put("success", true);
         result.put("message", "Escalated to Orange. Cadet removed from team. " +
-            "Refer to Head of Mentorship.");
+            "Refer to Liaison.");
         result.put("cadet", cadet);
         return result;
     }

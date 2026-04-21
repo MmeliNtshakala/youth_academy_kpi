@@ -200,7 +200,7 @@ public class DataSeeder implements CommandLineRunner {
                     "Cadet removed from project team.",
                     cadet.getProjectManager(),
                     LocalDate.now().minusDays(cadet.getDaysSinceFlag() + 2),
-                    "Referred to Head of Mentorship & Development."
+                    "Referred to Liaison."
                 ));
 
                 events.add(new FlagEvent(
@@ -208,7 +208,7 @@ public class DataSeeder implements CommandLineRunner {
                     cadet.getFullName(),
                     "PLAN_AGREED",
                     "Re-engagement plan agreed with mentor.",
-                    "Head of Mentorship",
+                    "Liaison",
                     LocalDate.now().minusDays(cadet.getDaysSinceFlag()),
                     cadet.getReengagementPlan().isBlank()
                         ? "Weekly check-ins agreed."

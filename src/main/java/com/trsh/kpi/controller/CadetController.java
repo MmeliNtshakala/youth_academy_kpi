@@ -210,7 +210,7 @@ public class CadetController {
      *
      * Request body (JSON):
      * {
-     *   "triggeredBy": "Head of Mentorship",
+     *   "triggeredBy": "Liaison",
      *   "notes": "Correction completed satisfactorily."
      * }
      */
@@ -233,7 +233,7 @@ public class CadetController {
      *
      * Request body (JSON):
      * {
-     *   "triggeredBy": "Head of Mentorship",
+     *   "triggeredBy": "Liaison",
      *   "planDetails": "Cadet to attend weekly check-ins for 4 weeks."
      * }
      */
