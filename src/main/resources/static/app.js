@@ -167,30 +167,113 @@ async function loadCadets() {
 }
 
 function renderCadetTable(cadets) {
-  const tbody = document.getElementById('cadet-table');
-  const count = document.getElementById('table-count');
-  tbody.innerHTML = cadets.slice(0, 50).map(c => `
-    <tr>
-      <td>
-        <div class="cadet-cell">
-          <div class="avatar">${initials(c.fullName)}</div>
-          <div>
-            <div class="cadet-name">${c.fullName}</div>
-            <div class="cadet-id">${c.cadetCode}</div>
+  const regions = [
+    'Gauteng', 'KwaZulu-Natal', 'Western Cape', 'Eastern Cape'
+  ];
+
+  // Group cadets by region
+  const grouped = {};
+  regions.forEach(r => grouped[r] = []);
+  cadets.forEach(c => {
+    const r = c.project;
+    if (grouped[r]) grouped[r].push(c);
+    else grouped[r] = [c];
+  });
+
+  const container = document.getElementById('cadet-regions');
+  const countEl   = document.getElementById('table-count');
+
+  let html = '';
+
+  regions.forEach(region => {
+    const list = grouped[region] || [];
+    if (list.length === 0) return;
+
+    const flagCounts = {
+      NONE:   list.filter(c => c.flagStatus === 'NONE').length,
+      YELLOW: list.filter(c => c.flagStatus === 'YELLOW').length,
+      ORANGE: list.filter(c => c.flagStatus === 'ORANGE').length,
+      RED:    list.filter(c => c.flagStatus === 'RED').length,
+    };
+    const avgAtt = Math.round(
+      list.reduce((s, c) => s + c.attendancePercent, 0) / list.length
+    );
+
+    html += `
+      <div class="region-folder" id="folder-${region.replace(/\s/g,'-')}">
+        <div class="region-folder-header"
+          onclick="toggleFolder('${region.replace(/\s/g,'-')}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="folder-arrow" id="arrow-${region.replace(/\s/g,'-')}">▶</span>
+            <span class="region-folder-name">${region}</span>
+            <span class="region-folder-count">${list.length} cadets</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${flagCounts.YELLOW > 0
+              ? `<span class="flag flag-yellow">${flagCounts.YELLOW} yellow</span>` : ''}
+            ${flagCounts.ORANGE > 0
+              ? `<span class="flag flag-orange">${flagCounts.ORANGE} orange</span>` : ''}
+            ${flagCounts.RED > 0
+              ? `<span class="flag flag-red">${flagCounts.RED} red</span>` : ''}
+            <span style="font-size:12px;color:#888">
+              avg ${avgAtt}% attendance
+            </span>
           </div>
         </div>
-      </td>
-      <td>${c.project}</td>
-      <td>${flagBadge(c.flagStatus)}</td>
-      <td>${progressBar(c.attendancePercent)}</td>
-      <td style="color:#aaa;font-size:12px">
-        ${c.lastContactDate || '—'}
-      </td>
-      <td style="font-size:12px">${c.projectManager}</td>
-      <td><div class="action-btns">${actionButtons(c)}</div></td>
-    </tr>`).join('');
-  count.textContent = 'Showing ' + Math.min(cadets.length, 50) +
-    ' of ' + cadets.length + ' cadets';
+
+        <div class="region-folder-body" id="body-${region.replace(/\s/g,'-')}"
+          style="display:none">
+          <table>
+            <thead>
+              <tr>
+                <th>Cadet</th>
+                <th>Flag</th>
+                <th>Attendance</th>
+                <th>Last contact</th>
+                <th>PM</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(c => `
+                <tr>
+                  <td>
+                    <div class="cadet-cell">
+                      <div class="avatar">${initials(c.fullName)}</div>
+                      <div>
+                        <div class="cadet-name">${c.fullName}</div>
+                        <div class="cadet-id">${c.cadetCode}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>${flagBadge(c.flagStatus)}</td>
+                  <td>${progressBar(c.attendancePercent)}</td>
+                  <td style="color:#aaa;font-size:12px">
+                    ${c.lastContactDate || '—'}
+                  </td>
+                  <td style="font-size:12px">${c.projectManager}</td>
+                  <td>
+                    <div class="action-btns">${actionButtons(c)}</div>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html ||
+    '<p style="color:#aaa;font-size:13px;padding:12px">No cadets found.</p>';
+  countEl.textContent = cadets.length + ' cadets across ' +
+    regions.filter(r => (grouped[r] || []).length > 0).length + ' regions';
+}
+
+function toggleFolder(regionKey) {
+  const body  = document.getElementById('body-'  + regionKey);
+  const arrow = document.getElementById('arrow-' + regionKey);
+  const isOpen = body.style.display !== 'none';
+  body.style.display  = isOpen ? 'none' : 'block';
+  arrow.textContent   = isOpen ? '▶' : '▼';
 }
 
 function actionButtons(c) {
