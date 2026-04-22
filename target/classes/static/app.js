@@ -168,7 +168,7 @@ async function loadCadets() {
 
 function renderCadetTable(cadets) {
   const regions = [
-    'Gauteng', 'KwaZulu-Natal', 'Western Cape', 'Eastern Cape'
+    'Gauteng', 'eMazweni', 'eMangalisweni', 'eZenzweni', 'Botswana', 'Zimbabwe', 'Mozambique', 'International'
   ];
 
   // Group cadets by region
