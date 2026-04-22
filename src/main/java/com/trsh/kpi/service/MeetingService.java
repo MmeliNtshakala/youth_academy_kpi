@@ -124,7 +124,7 @@ public class MeetingService {
         // Group cadets by region
         Map<String, List<Map<String, Object>>> grouped = new LinkedHashMap<>();
         String[] regionOrder = {
-            "Gauteng", "KwaZulu-Natal", "Western Cape", "Eastern Cape"
+            "Gauteng", "eMazweni", "eMangalisweni", "eZenzweni", "Mozambique", "Zimbabwe", "Botswana", "International"
         };
 
         for (String region : regionOrder) {

@@ -51,7 +51,7 @@ public class DataSeeder implements CommandLineRunner {
     };
 
     private static final String[] PROJECT_MANAGERS = {
-        "Ms Dlamini", "Mr Khumalo", "Dr Nkosi", "Ms Mokoena"
+        "Liason1", "Liason", "Liason2", "Liason4", "Liason5"
     };
 
     // ── Flag distribution targets (out of 300) ────────────────

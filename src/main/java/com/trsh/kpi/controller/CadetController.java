@@ -81,10 +81,10 @@ public class CadetController {
      * {
      *   "cadetCode": "CDT-0301",
      *   "fullName": "Thabo Nkosi",
-     *   "project": "Leadership",
+     *   "Region": "Gauteng",
      *   "flagStatus": "NONE",
      *   "attendancePercent": 80,
-     *   "projectManager": "Ms Dlamini",
+     *   "projectManager": "Liason name",
      *   "lastContactDate": "2026-04-16"
      * }
      */
