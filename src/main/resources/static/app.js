@@ -296,36 +296,175 @@ function actionButtons(c) {
 // ── Flags ─────────────────────────────────────────────────────
 async function loadFlagView() {
   try {
-    const data    = await get('/api/dashboard');
-    document.getElementById('f-yellow').textContent = data.yellowCount;
-    document.getElementById('f-orange').textContent = data.orangeCount;
-    document.getElementById('f-red').textContent    = data.redCount;
+    const data = await get('/api/dashboard');
+
+    const fy = document.getElementById('f-yellow');
+    const fo = document.getElementById('f-orange');
+    const fr = document.getElementById('f-red');
+    if (fy) fy.textContent = data.yellowCount  || 0;
+    if (fo) fo.textContent = data.orangeCount  || 0;
+    if (fr) fr.textContent = data.redCount     || 0;
+
+  } catch (e) {
+    console.error('Dashboard metrics failed:', e);
+  }
+
+  try {
     const y = await get('/api/cadets?flag=YELLOW');
     const o = await get('/api/cadets?flag=ORANGE');
     const r = await get('/api/cadets?flag=RED');
-    renderFlagTable([...y, ...o, ...r]);
-  } catch (e) { console.error('Flag view failed:', e); }
+    const all = [...y, ...o, ...r];
+    console.log('Flagged cadets loaded:', all.length);
+    renderFlagTable(all);
+  } catch (e) {
+    console.error('Flagged cadets failed:', e);
+    const container = document.getElementById('flag-table-container');
+    if (container) {
+      container.innerHTML =
+        '<p style="color:#a32d2d;font-size:13px;padding:8px 0">' +
+        'Failed to load flagged cadets. Check console.</p>';
+    }
+  }
 }
 
 function renderFlagTable(cadets) {
-  document.getElementById('flag-table').innerHTML =
-    cadets.map(c => `
-      <tr>
-        <td>
-          <div class="cadet-cell">
-            <div class="avatar">${initials(c.fullName)}</div>
-            <div>
-              <div class="cadet-name">${c.fullName}</div>
-              <div class="cadet-id">${c.cadetCode}</div>
+  const regions = [
+    'Gauteng','eMazweni','eMangalisweni','eZenzweni', 'Zimbabwe', 'Mozambique', 'International'
+  ];
+
+  // Group flagged cadets by region
+  const grouped = {};
+  regions.forEach(r => grouped[r] = []);
+  cadets.forEach(c => {
+    const r = c.project;
+    if (grouped[r]) grouped[r].push(c);
+    else grouped[r] = [c];
+  });
+
+  const container = document.getElementById('flag-table-container');
+  if (!container) {
+    // Fallback to old tbody if container not yet in HTML
+    document.getElementById('flag-table').innerHTML =
+      cadets.map(c => `
+        <tr>
+          <td>
+            <div class="cadet-cell">
+              <div class="avatar">${initials(c.fullName)}</div>
+              <div>
+                <div class="cadet-name">${c.fullName}</div>
+                <div class="cadet-id">${c.cadetCode}</div>
+              </div>
             </div>
+          </td>
+          <td>${flagBadge(c.flagStatus)}</td>
+          <td style="font-size:12px">${c.daysSinceFlag}d</td>
+          <td style="font-size:12px">${c.project}</td>
+          <td style="font-size:12px">${c.projectManager}</td>
+          <td><div class="action-btns">${actionButtons(c)}</div></td>
+        </tr>`).join('');
+    return;
+  }
+
+  if (cadets.length === 0) {
+    container.innerHTML =
+      '<p style="color:#aaa;font-size:13px;padding:8px 0">' +
+      'No flagged cadets.</p>';
+    return;
+  }
+
+  let html = '';
+
+  regions.forEach(region => {
+    const list = grouped[region] || [];
+    if (list.length === 0) return;
+
+    const regionKey = region.replace(/\s/g, '-');
+    html += `
+      <div class="region-folder" id="flag-folder-${regionKey}"
+        style="margin-bottom:10px">
+        <div class="region-folder-header"
+          onclick="toggleFlagFolder('${regionKey}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="folder-arrow"
+              id="flag-arrow-${regionKey}">▶</span>
+            <span class="region-folder-name">${region}</span>
+            <span class="region-folder-count">
+              ${list.length} flagged
+            </span>
           </div>
-        </td>
-        <td>${flagBadge(c.flagStatus)}</td>
-        <td style="font-size:12px">${c.daysSinceFlag}d</td>
-        <td style="font-size:12px">${c.project}</td>
-        <td style="font-size:12px">${c.projectManager}</td>
-        <td><div class="action-btns">${actionButtons(c)}</div></td>
-      </tr>`).join('');
+          <div style="display:flex;align-items:center;gap:8px">
+            ${list.filter(c=>c.flagStatus==='YELLOW').length > 0
+              ? `<span class="flag flag-yellow">
+                  ${list.filter(c=>c.flagStatus==='YELLOW').length} yellow
+                 </span>` : ''}
+            ${list.filter(c=>c.flagStatus==='ORANGE').length > 0
+              ? `<span class="flag flag-orange">
+                  ${list.filter(c=>c.flagStatus==='ORANGE').length} orange
+                 </span>` : ''}
+            ${list.filter(c=>c.flagStatus==='RED').length > 0
+              ? `<span class="flag flag-red">
+                  ${list.filter(c=>c.flagStatus==='RED').length} red
+                 </span>` : ''}
+          </div>
+        </div>
+        <div class="region-folder-body"
+          id="flag-body-${regionKey}" style="display:none">
+          <table>
+            <thead>
+              <tr>
+                <th>Cadet</th>
+                <th>Flag</th>
+                <th>Days since flag</th>
+                <th>Liason</th>
+                <th>Next action</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(c => `
+                <tr>
+                  <td>
+                    <div class="cadet-cell">
+                      <div class="avatar">
+                        ${initials(c.fullName)}
+                      </div>
+                      <div>
+                        <div class="cadet-name">${c.fullName}</div>
+                        <div class="cadet-id">${c.cadetCode}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>${flagBadge(c.flagStatus)}</td>
+                  <td style="font-size:12px">${c.daysSinceFlag}d</td>
+                  <td style="font-size:12px">${c.projectManager}</td>
+                  <td style="font-size:11px;color:#888">
+                    ${c.flagStatus === 'YELLOW'
+                      ? 'Escalate to Orange if no re-engagement'
+                      : c.flagStatus === 'ORANGE'
+                      ? 'Refer to Liaison'
+                      : 'Disciplinary Subcommittee review'}
+                  </td>
+                  <td>
+                    <div class="action-btns">
+                      ${actionButtons(c)}
+                    </div>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleFlagFolder(regionKey) {
+  const body  = document.getElementById('flag-body-'  + regionKey);
+  const arrow = document.getElementById('flag-arrow-' + regionKey);
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent  = isOpen ? '▶' : '▼';
 }
 
 // ── Register landing ──────────────────────────────────────────

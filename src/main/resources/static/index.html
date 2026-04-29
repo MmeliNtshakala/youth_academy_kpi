@@ -163,19 +163,7 @@
             <div class="panel-header">
               <span class="panel-title">Flagged cadets</span>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Cadet</th>
-                  <th>Flag</th>
-                  <th>Days since flag</th>
-                  <th>Region</th>
-                  <th>Liason</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="flag-table"></tbody>
-            </table>
+            <div id="flag-table-container"></div>
           </div>
 
           <div class="panel">
@@ -374,7 +362,7 @@
             </div>
             <div style="display:flex;gap:8px;margin-bottom:16px">
               <input class="filter-input" id="report-search"
-                placeholder="Search cadet name..."
+                placeholder="<p>Removed from team. Referred to Liaison.</p>Search cadet name..."
                 style="width:240px"
                 oninput="searchCadetReport()">
             </div>
@@ -401,7 +389,7 @@
           <input class="form-input" id="new-code" placeholder="e.g. CDT-0301">
         </div>
         <div class="form-row">
-          <label>Project</label>
+          <label>Region</label>
           <select class="form-input" id="new-project">
             <option>eMangalisweni</option>
             <option>Gauteng</option>
