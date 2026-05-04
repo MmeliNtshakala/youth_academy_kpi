@@ -20,24 +20,49 @@
   </parent>
 
   <properties>
-    <java.version>21</java.version>
+    <java.version>11</java.version>
   </properties>
 
   <dependencies>
 
-    <!-- Spring Boot Web (REST API + serves HTML files) -->
+    <!-- Spring Boot Web -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
-    <!-- Spring Data JPA (database access) -->
+    <!-- Spring Data JPA -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
-    <!-- H2 embedded database (no install needed) -->
+    <!-- Spring Security — login, roles, sessions -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Thymeleaf — for login page templating -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+
+    <!-- Thymeleaf + Spring Security integration -->
+    <dependency>
+      <groupId>org.thymeleaf.extras</groupId>
+      <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+    </dependency>
+
+    <!-- PostgreSQL driver — for Railway deployment -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- H2 — still used for local development -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
