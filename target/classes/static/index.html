@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRSH YOUTH ACADEMY</title>
+  <title>TRSH Youth Academy Perfomance System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,52 +14,70 @@
     <aside class="sidebar">
       <div class="sidebar-logo">
         <h2>TRSH Youth Academy</h2>
-        <p>Cadet KPI System</p>
+        <p>Cadet System</p>
       </div>
+
       <nav class="nav-section">
         <div class="nav-label">Main</div>
-        <div class="nav-item active" onclick="showView('dashboard', this)">
+        <div class="nav-item active"
+          onclick="showView('dashboard', this)">
           Dashboard
         </div>
-        <div class="nav-item" onclick="showView('cadets', this)">
+        <div class="nav-item"
+          onclick="showView('cadets', this)">
           Cadets
         </div>
-        <div class="nav-item" onclick="showView('flags', this)">
+        <div class="nav-item"
+          onclick="showView('flags', this)">
           Flags &amp; Actions
         </div>
-        <div class="nav-item" onclick="showView('register', this)">
+        <div class="nav-item"
+          onclick="showView('register', this)">
           Register
         </div>
-        <div class="nav-item" onclick="showView('reports', this)">
+        <div class="nav-item"
+          onclick="showView('reports', this)">
           Reports
         </div>
+
+        <div class="nav-label" style="margin-top:12px">Admin</div>
+        <div class="nav-item" id="nav-users"
+          onclick="showView('users', this)"
+          style="display:none">
+          User management
+        </div>
       </nav>
-      <div class="role-badge">
-        <div class="name">Admin</div>
-        <div class="role">Full access · 2026</div>
+
+      <!-- Logged in user + logout -->
+      <div class="sidebar-user">
+        <div class="sidebar-user-info">
+          <div class="name" id="user-name">Loading...</div>
+          <div class="role" id="user-role"></div>
+        </div>
+        <a href="/logout" class="logout-btn"
+          title="Sign out">&#x2192;</a>
       </div>
     </aside>
 
-    <!-- MAIN-->
+    <!-- MAIN -->
     <div class="main">
-
-      <!-- TOP BAR -->
       <div class="topbar">
         <h1 id="page-title">Dashboard</h1>
         <div class="topbar-actions">
-          <button class="btn" onclick="openModal()">+ Add cadet</button>
+          <button class="btn btn-primary" id="top-action-btn"
+            onclick="handleTopAction()">+ Add cadet</button>
         </div>
       </div>
 
       <div class="content">
 
-        <!-- DASHBOARD VIEW -->
+        <!-- DASHBOARD -->
         <div id="view-dashboard" class="view active">
           <div class="metrics-row">
             <div class="metric-card">
               <div class="metric-label">Total cadets</div>
               <div class="metric-value" id="m-total">—</div>
-              <div class="metric-sub">12-month programme</div>
+  
             </div>
             <div class="metric-card">
               <div class="metric-label">Active (no flag)</div>
@@ -77,7 +95,6 @@
               <div class="metric-sub">Across all regions</div>
             </div>
           </div>
-
           <div class="two-col">
             <div class="panel">
               <div class="panel-header">
@@ -92,7 +109,6 @@
               <canvas id="projectChart" height="220"></canvas>
             </div>
           </div>
-
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Recent flag activity</span>
@@ -101,15 +117,13 @@
           </div>
         </div>
 
-        <!-- CADETS VIEW -->
+        <!-- CADETS -->
         <div id="view-cadets" class="view">
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Cadet registry</span>
               <div class="filters">
-                <input
-                  class="filter-input"
-                  id="search"
+                <input class="filter-input" id="search"
                   placeholder="Search name or ID..."
                   oninput="loadCadets()">
                 <select class="filter-select"
@@ -123,10 +137,10 @@
                 <select class="filter-select"
                   id="filter-project" onchange="loadCadets()">
                   <option value="">All regions</option>
-                  <option>eMazweni</option>
+                  <option>Gauteng</option>
+                  <option>eMzweni</option>
                   <option>eMangalisweni</option>
                   <option>eZenzweni</option>
-                  <option>Gauteng</option>
                   <option>Zimbabwe</option>
                   <option>Mozambique</option>
                   <option>International</option>
@@ -138,7 +152,7 @@
           </div>
         </div>
 
-        <!-- FLAGS VIEW -->
+        <!-- FLAGS -->
         <div id="view-flags" class="view">
           <div class="metrics-row three-col">
             <div class="metric-card">
@@ -157,31 +171,35 @@
               <div class="metric-sub">Correction</div>
             </div>
           </div>
-
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Flagged cadets</span>
             </div>
             <div id="flag-table-container"></div>
           </div>
-
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Framework rules</span>
             </div>
             <div class="rules-grid">
               <div class="rule-card yellow-card">
-                <div class="rule-title yellow-text">Yellow — First warning</div>
+                <div class="rule-title yellow-text">
+                  Yellow — First warning
+                </div>
                 <p>Missed 2 meetings or 14 days no response.</p>
                 <p>Written notice issued. 5 days to re-engage.</p>
               </div>
               <div class="rule-card orange-card">
-                <div class="rule-title orange-text">Orange — Formal action</div>
+                <div class="rule-title orange-text">
+                  Orange — Formal action
+                </div>
                 <p>No re-engagement within 5 days of Yellow.</p>
-                <p>Removed from team. Referred to Mentorship.</p>
+                <p>Removed from team. Referred to Liaison.</p>
               </div>
               <div class="rule-card red-card">
-                <div class="rule-title red-text">Red — Correction</div>
+                <div class="rule-title red-text">
+                  Red — Correction
+                </div>
                 <p>2+ Orange flags in 12 months or plan failure.</p>
                 <p>Referred to Disciplinary Subcommittee.</p>
               </div>
@@ -189,10 +207,10 @@
           </div>
         </div>
 
-        <div id="view-register"  class="view">
+        <!-- REGISTER -->
+        <div id="view-register" class="view">
           <div id="register-landing">
-            <div class="two-col" style="margin-bottom: 16px">
-
+            <div class="two-col" style="margin-bottom:16px">
               <div class="panel">
                 <div class="panel-header">
                   <span class="panel-title">Create meeting</span>
@@ -201,9 +219,7 @@
                   <label>Meeting type</label>
                   <select class="form-input" id="reg-type">
                     <option>Sunday Imfundiso</option>
-                    <option>Provincial Meeting</option>
-                    <option>National Meeting</option>
-                    <option>Special Event</option>
+                    <option>TRSH Event</option>
                   </select>
                 </div>
                 <div class="form-row">
@@ -217,7 +233,7 @@
                     <option value="ALL">All regions</option>
                     <option>Gauteng</option>
                     <option>eMazweni</option>
-                    <option>eMangalisweni</option></optiom></option>
+                    <option>eMangalisweni</option>
                     <option>eZenzweni</option>
                     <option>Zimbabwe</option>
                     <option>Mozambique</option>
@@ -226,17 +242,13 @@
                 </div>
                 <div class="form-row">
                   <label>Date</label>
-                  <input class="form-input" id="reg-date" type="date">
+                  <input class="form-input" id="reg-date"
+                    type="date">
                 </div>
                 <div class="form-row">
-                  <label>Created by</label>
-                  <input class="form-input" id="reg-created-by"
-                    placeholder="e.g. Liason name">
-                </div>
-                <div class="form-row">
-                  <label>Notes (optional)</label>
+                  <label>Notes (Mandatory - meeting minutes)</label>
                   <input class="form-input" id="reg-notes"
-                    placeholder="e.g. Meeting Agenda">
+                    placeholder="e.g. Monthly review session">
                 </div>
                 <button class="btn btn-primary"
                   style="width:100%;margin-top:4px"
@@ -244,20 +256,15 @@
                   Create meeting
                 </button>
               </div>
-
-              <!-- Incomplete register-->
               <div class="panel">
                 <div class="panel-header">
                   <span class="panel-title">Pending registers</span>
                 </div>
-                <div id="incomplete">
-                  <p style="color:#aaa;font-size:12px">
-                    Loading...
-                  </p>
+                <div id="incomplete-list">
+                  <p style="color:#aaa;font-size:12px">Loading...</p>
                 </div>
               </div>
             </div>
-
             <div class="panel">
               <div class="panel-header">
                 <span class="panel-title">All meetings</span>
@@ -289,6 +296,8 @@
               </table>
             </div>
           </div>
+
+          <!-- Register sheet -->
           <div id="register-sheet" style="display:none">
             <div class="panel">
               <div class="panel-header">
@@ -303,46 +312,36 @@
                   <input class="filter-input" id="sheet-search"
                     placeholder="Search cadet..."
                     oninput="filterSheetRows()">
-                  <button class="btn" onclick="backToLanding()">
-                    Back
-                  </button>
+                  <button class="btn"
+                    onclick="backToLanding()">Back</button>
                   <button class="btn btn-primary"
                     onclick="submitRegister()">
                     Submit register
                   </button>
                 </div>
               </div>
-
               <div style="display:flex;align-items:center;
-                gap:12px;margin-bottom:16px;
-                padding:10px 12px;background:#f5f5f3;
-                border-radius:8px">
+                gap:12px;margin-bottom:16px;padding:10px 12px;
+                background:#f5f5f3;border-radius:8px">
                 <span style="font-size:12px;color:#888;
                   white-space:nowrap">Recorded by</span>
                 <input class="form-input"
                   id="register-recorded-by"
-                  placeholder="Enter your name (PM)"
+                  placeholder="Your name"
                   style="max-width:240px">
-                <span style="font-size:12px;color:#aaa">
-                  — required before submitting
-                </span>
               </div>
-
-              <!-- Error / success banner -->
               <div id="register-banner" style="display:none"></div>
-
-              <!-- Province groups rendered here -->
               <div id="register-groups"></div>
             </div>
           </div>
         </div>
 
-        <!-- REPORTS VIEW -->
-        div id="view-reports" class="view">
+        <!-- REPORTS -->
+        <div id="view-reports" class="view">
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">
-                KPI summary — 12-month programme
+                KPI summary
               </span>
             </div>
             <div id="kpi-summary"></div>
@@ -359,12 +358,33 @@
             </div>
             <div style="display:flex;gap:8px;margin-bottom:16px">
               <input class="filter-input" id="report-search"
-                placeholder="<p>Removed from team. Referred to Liaison.</p>Search cadet name..."
+                placeholder="Search cadet name..."
                 style="width:240px"
                 oninput="searchCadetReport()">
             </div>
             <div id="report-cadet-results"></div>
             <div id="report-cadet-detail"></div>
+          </div>
+        </div>
+
+        <!-- USER MANAGEMENT (Admin only) -->
+        <div id="view-users" class="view">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">All users</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Region</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table"></tbody>
+            </table>
           </div>
         </div>
 
@@ -378,21 +398,21 @@
       <h3>Add new cadet</h3>
       <div class="form-row">
         <label>Full name</label>
-        <input class="form-input" id="new-name" placeholder="e.g. Cadet Name">
+        <input class="form-input" id="new-name"
+          placeholder="e.g. Thabo Nkosi">
       </div>
       <div class="form-two-col">
         <div class="form-row">
           <label>Cadet ID</label>
-          <input class="form-input" id="new-code" placeholder="e.g. CDT-0301">
+          <input class="form-input" id="new-code"
+            placeholder="e.g. CDT-0001">
         </div>
         <div class="form-row">
-          <label>Region
-            
-          </label>
+          <label>Region</label>
           <select class="form-input" id="new-project">
-            <option>eMangalisweni</option>
             <option>Gauteng</option>
             <option>eMazweni</option>
+            <option>eMangalisweni</option>
             <option>eZenzweni</option>
             <option>Zimbabwe</option>
             <option>Mozambique</option>
@@ -404,19 +424,18 @@
         <div class="form-row">
           <label>Attendance (%)</label>
           <input class="form-input" id="new-att"
-            type="number" min="0" max="100" value="80">
+            type="number" min="0" max="100" value="0">
         </div>
         <div class="form-row">
-          <label>Liason</label>
+          <label>Liaison</label>
           <input class="form-input" id="new-pm"
-            placeholder="e.g. Liason Name">
+            placeholder="e.g Full Name">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitNewCadet()">
-          Add cadet
-        </button>
+        <button class="btn btn-primary"
+          onclick="submitNewCadet()">Add cadet</button>
       </div>
     </div>
   </div>
@@ -428,7 +447,7 @@
       <div class="form-row">
         <label>Triggered by</label>
         <input class="form-input" id="flag-triggered-by"
-          placeholder="e.g. Liason name">
+          placeholder="Your name">
       </div>
       <div class="form-row" id="flag-reason-row">
         <label>Reason</label>
@@ -438,18 +457,93 @@
       <div class="form-row" id="flag-notes-row" style="display:none">
         <label>Notes</label>
         <textarea class="form-input" id="flag-notes" rows="3"
-          placeholder="e.g. Correction completed satisfactorily."></textarea>
+          placeholder="e.g. Correction completed satisfactorily.">
+        </textarea>
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeFlagModal()">Cancel</button>
-        <button class="btn btn-primary" id="flag-modal-confirm"
+        <button class="btn btn-primary"
           onclick="submitFlagAction()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD USER MODAL -->
+  <div class="modal-bg" id="user-modal">
+    <div class="modal">
+      <h3>Create user account</h3>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Username</label>
+          <input class="form-input" id="u-username"
+            placeholder="e.g. ms.dlamini">
+        </div>
+        <div class="form-row">
+          <label>Password</label>
+          <input class="form-input" id="u-password"
+            type="password" placeholder="Min 6 characters">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Full name</label>
+        <input class="form-input" id="u-fullname"
+          placeholder="e.g. Name and Surname">
+      </div>
+      <div class="form-two-col">
+        <div class="form-row">
+          <label>Role</label>
+          <select class="form-input" id="u-role">
+            <option value="LIAISON">Liaison</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Region</label>
+          <select class="form-input" id="u-region">
+            <option value="ALL">All regions (Admin)</option>
+            <option>Gauteng</option>
+            <option>eMazweni</option>
+            <option>eMangalisweni</option>
+            <option>eZenzweni</option>
+            <option>Zimbabwe</option>
+            <option>Mozambique</option>
+            <option>International</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn"
+          onclick="closeUserModal()">Cancel</button>
+        <button class="btn btn-primary"
+          onclick="submitNewUser()">Create account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESET PASSWORD MODAL -->
+  <div class="modal-bg" id="rp-modal">
+    <div class="modal">
+      <h3>Reset password</h3>
+      <input type="hidden" id="rp-user-id">
+      <p style="font-size:13px;color:#888;margin-bottom:16px">
+        Resetting password for
+        <strong id="rp-user-name"></strong>
+      </p>
+      <div class="form-row">
+        <label>New password</label>
+        <input class="form-input" id="rp-password"
+          type="password" placeholder="Min 6 characters">
+      </div>
+      <div class="modal-footer">
+        <button class="btn"
+          onclick="closeResetModal()">Cancel</button>
+        <button class="btn btn-primary"
+          onclick="submitResetPassword()">Reset password</button>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
