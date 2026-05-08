@@ -54,8 +54,13 @@
           <div class="name" id="user-name">Loading...</div>
           <div class="role" id="user-role"></div>
         </div>
-        <a href="/logout" class="logout-btn"
-          title="Sign out">&#x2192;</a>
+        <form method="post" action="/logout" style="margin:0">
+          <input type="hidden"
+            name="${_csrf.parameterName}"
+            value="${_csrf.token}">
+          <button type="submit" class="logout-btn"
+            title="Sign out">&#x2192;</button>
+        </form>
       </div>
     </aside>
 
