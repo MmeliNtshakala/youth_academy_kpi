@@ -119,7 +119,7 @@ public class SecurityConfig {
 
             // Disable CSRF for API calls from our JS frontend
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**", "/h2-console/**")
+                .ignoringRequestMatchers("/api/**", "/h2-console/**", "/logout")
             );
 
         return http.build();

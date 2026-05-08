@@ -401,6 +401,10 @@ textarea.form-input { resize: vertical; }
   padding: 4px 6px;
   border-radius: 6px;
   transition: background .1s, color .1s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 .logout-btn:hover {
   background: #1a2744;
