@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRSH Youth Academy Perfomance System</title>
+  <title>TRSH KPI System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
     <aside class="sidebar">
       <div class="sidebar-logo">
         <h2>TRSH Youth Academy</h2>
-        <p>Cadet System</p>
+        <p>Cadet KPI System</p>
       </div>
 
       <nav class="nav-section">
@@ -36,10 +36,13 @@
           Register
         </div>
         <div class="nav-item"
+          onclick="showView('projects', this)">
+          Projects
+        </div>
+        <div class="nav-item"
           onclick="showView('reports', this)">
           Reports
         </div>
-
         <div class="nav-label" style="margin-top:12px">Admin</div>
         <div class="nav-item" id="nav-users"
           onclick="showView('users', this)"
@@ -48,7 +51,6 @@
         </div>
       </nav>
 
-      <!-- Logged in user + logout -->
       <div class="sidebar-user">
         <div class="sidebar-user-info">
           <div class="name" id="user-name">Loading...</div>
@@ -79,7 +81,7 @@
             <div class="metric-card">
               <div class="metric-label">Total cadets</div>
               <div class="metric-value" id="m-total">—</div>
-  
+              <div class="metric-sub">12-month programme</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Active (no flag)</div>
@@ -97,6 +99,32 @@
               <div class="metric-sub">Across all regions</div>
             </div>
           </div>
+
+          <!-- Wellbeing summary row -->
+          <div class="metrics-row three-col"
+            style="margin-bottom:20px">
+            <div class="metric-card"
+              style="border-left:3px solid #3b6d11">
+              <div class="metric-label">Wellbeing — Green</div>
+              <div class="metric-value green"
+                id="wb-green">—</div>
+              <div class="metric-sub">Doing well</div>
+            </div>
+            <div class="metric-card"
+              style="border-left:3px solid #ba7517">
+              <div class="metric-label">Wellbeing — Amber</div>
+              <div class="metric-value yellow"
+                id="wb-amber">—</div>
+              <div class="metric-sub">Needs attention</div>
+            </div>
+            <div class="metric-card"
+              style="border-left:3px solid #a32d2d">
+              <div class="metric-label">Wellbeing — Red</div>
+              <div class="metric-value red" id="wb-red">—</div>
+              <div class="metric-sub">Urgent support needed</div>
+            </div>
+          </div>
+
           <div class="two-col">
             <div class="panel">
               <div class="panel-header">
@@ -106,11 +134,26 @@
             </div>
             <div class="panel">
               <div class="panel-header">
-                <span class="panel-title">Attendance by region</span>
+                <span class="panel-title">
+                  Attendance by region
+                </span>
               </div>
               <canvas id="projectChart" height="220"></canvas>
             </div>
           </div>
+
+          <!-- Pressing info alerts -->
+          <div class="panel" id="pressing-panel"
+            style="display:none">
+            <div class="panel-header">
+              <span class="panel-title"
+                style="color:#a32d2d">
+                ⚠ Pressing matters
+              </span>
+            </div>
+            <div id="pressing-list"></div>
+          </div>
+
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Recent flag activity</span>
@@ -140,12 +183,9 @@
                   id="filter-project" onchange="loadCadets()">
                   <option value="">All regions</option>
                   <option>Gauteng</option>
-                  <option>eMzweni</option>
-                  <option>eMangalisweni</option>
-                  <option>eZenzweni</option>
-                  <option>Zimbabwe</option>
-                  <option>Mozambique</option>
-                  <option>International</option>
+                  <option>KwaZulu-Natal</option>
+                  <option>Western Cape</option>
+                  <option>Eastern Cape</option>
                 </select>
               </div>
             </div>
@@ -159,12 +199,14 @@
           <div class="metrics-row three-col">
             <div class="metric-card">
               <div class="metric-label">Yellow flags</div>
-              <div class="metric-value yellow" id="f-yellow">—</div>
+              <div class="metric-value yellow"
+                id="f-yellow">—</div>
               <div class="metric-sub">First warning</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Orange flags</div>
-              <div class="metric-value orange" id="f-orange">—</div>
+              <div class="metric-value orange"
+                id="f-orange">—</div>
               <div class="metric-sub">Formal action</div>
             </div>
             <div class="metric-card">
@@ -220,8 +262,8 @@
                 <div class="form-row">
                   <label>Meeting type</label>
                   <select class="form-input" id="reg-type">
-                    <option>Sunday Imfundiso</option>
-                    <option>TRSH Event</option>
+                    <option>Sunday Session</option>
+                    <option>Special Event</option>
                   </select>
                 </div>
                 <div class="form-row">
@@ -234,12 +276,9 @@
                   <select class="form-input" id="reg-region">
                     <option value="ALL">All regions</option>
                     <option>Gauteng</option>
-                    <option>eMazweni</option>
-                    <option>eMangalisweni</option>
-                    <option>eZenzweni</option>
-                    <option>Zimbabwe</option>
-                    <option>Mozambique</option>
-                    <option>International</option>
+                    <option>KwaZulu-Natal</option>
+                    <option>Western Cape</option>
+                    <option>Eastern Cape</option>
                   </select>
                 </div>
                 <div class="form-row">
@@ -248,7 +287,7 @@
                     type="date">
                 </div>
                 <div class="form-row">
-                  <label>Notes (Mandatory - meeting minutes)</label>
+                  <label>Notes (optional)</label>
                   <input class="form-input" id="reg-notes"
                     placeholder="e.g. Monthly review session">
                 </div>
@@ -260,10 +299,14 @@
               </div>
               <div class="panel">
                 <div class="panel-header">
-                  <span class="panel-title">Pending registers</span>
+                  <span class="panel-title">
+                    Pending registers
+                  </span>
                 </div>
                 <div id="incomplete-list">
-                  <p style="color:#aaa;font-size:12px">Loading...</p>
+                  <p style="color:#aaa;font-size:12px">
+                    Loading...
+                  </p>
                 </div>
               </div>
             </div>
@@ -275,23 +318,17 @@
                   onchange="loadMeetings()">
                   <option value="">All regions</option>
                   <option>Gauteng</option>
-                  <option>eMazweni</option>
-                  <option>eMangalisweni</option>
-                  <option>eZenzweni</option>
-                  <option>Zimbabwe</option>
-                  <option>Mozambique</option>
-                  <option>International</option>
+                  <option>KwaZulu-Natal</option>
+                  <option>Western Cape</option>
+                  <option>Eastern Cape</option>
                 </select>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Region</th>
-                    <th>Date</th>
-                    <th>Register</th>
-                    <th>Action</th>
+                    <th>Title</th><th>Type</th>
+                    <th>Region</th><th>Date</th>
+                    <th>Register</th><th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="meetings-table"></tbody>
@@ -307,11 +344,13 @@
                   <div class="panel-title" id="sheet-title">
                     Taking register...
                   </div>
-                  <div style="font-size:12px;color:#aaa;margin-top:2px"
-                    id="sheet-subtitle"></div>
+                  <div style="font-size:12px;color:#aaa;
+                    margin-top:2px" id="sheet-subtitle"></div>
                 </div>
-                <div style="display:flex;gap:8px;align-items:center">
-                  <input class="filter-input" id="sheet-search"
+                <div style="display:flex;gap:8px;
+                  align-items:center">
+                  <input class="filter-input"
+                    id="sheet-search"
                     placeholder="Search cadet..."
                     oninput="filterSheetRows()">
                   <button class="btn"
@@ -332,8 +371,180 @@
                   placeholder="Your name"
                   style="max-width:240px">
               </div>
-              <div id="register-banner" style="display:none"></div>
+              <div id="register-banner"
+                style="display:none"></div>
               <div id="register-groups"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div id="view-projects" class="view">
+
+          <!-- Project list -->
+          <div id="projects-landing">
+            <div class="two-col" style="margin-bottom:16px">
+
+              <!-- Create project -->
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">
+                    Create project
+                  </span>
+                </div>
+                <div class="form-row">
+                  <label>Project name</label>
+                  <input class="form-input" id="proj-name"
+                    placeholder="e.g. Youth Leadership Summit">
+                </div>
+                <div class="form-row">
+                  <label>Description</label>
+                  <textarea class="form-input" id="proj-desc"
+                    rows="2"
+                    placeholder="Brief description..."></textarea>
+                </div>
+                <div class="form-row admin-only"
+                  id="proj-scope-row">
+                  <label>Scope</label>
+                  <select class="form-input" id="proj-scope"
+                    onchange="toggleProjectScope()">
+                    <option value="NATIONAL">
+                      National (all regions)
+                    </option>
+                    <option value="PROVINCIAL">
+                      Provincial (my region)
+                    </option>
+                  </select>
+                </div>
+                <div class="form-two-col">
+                  <div class="form-row">
+                    <label>Start date</label>
+                    <input class="form-input" id="proj-start"
+                      type="date">
+                  </div>
+                  <div class="form-row">
+                    <label>Target end date</label>
+                    <input class="form-input" id="proj-end"
+                      type="date">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label>Badge name</label>
+                  <input class="form-input" id="proj-badge"
+                    placeholder="e.g. Leadership Summit 2026">
+                </div>
+
+                <!-- Milestones -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:12px;color:#888;
+                    margin-bottom:6px">
+                    Milestones
+                    <span style="color:#aaa">
+                      (min 1 required)
+                    </span>
+                  </div>
+                  <div id="milestone-inputs"></div>
+                  <button class="btn"
+                    style="width:100%;margin-top:6px;
+                    font-size:12px"
+                    onclick="addMilestoneInput()">
+                    + Add milestone
+                  </button>
+                </div>
+
+                <button class="btn btn-primary"
+                  style="width:100%;margin-top:8px"
+                  onclick="createProject()">
+                  Create project
+                </button>
+              </div>
+
+              <!-- Active projects summary -->
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">
+                    Active projects
+                  </span>
+                </div>
+                <div id="projects-summary"></div>
+              </div>
+            </div>
+
+            <!-- All projects table -->
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">All projects</span>
+                <select class="filter-select"
+                  id="proj-filter-status"
+                  onchange="loadProjects()">
+                  <option value="">All statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMPLETED">Completed</option>
+                </select>
+              </div>
+              <div id="projects-list"></div>
+            </div>
+          </div>
+
+          <!-- Project detail view -->
+          <div id="project-detail" style="display:none">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title"
+                    id="proj-detail-name"></div>
+                  <div style="font-size:12px;color:#aaa;
+                    margin-top:2px"
+                    id="proj-detail-meta"></div>
+                </div>
+                <button class="btn"
+                  onclick="backToProjects()">
+                  Back
+                </button>
+              </div>
+
+              <!-- Progress bar -->
+              <div style="margin-bottom:20px">
+                <div style="display:flex;justify-content:
+                  space-between;font-size:12px;
+                  color:#888;margin-bottom:6px">
+                  <span>Project progress</span>
+                  <span id="proj-pct">0%</span>
+                </div>
+                <div style="height:8px;background:#e8e8e4;
+                  border-radius:4px;overflow:hidden">
+                  <div id="proj-progress-fill"
+                    style="height:100%;border-radius:4px;
+                    background:#1d9e75;
+                    transition:width .3s"></div>
+                </div>
+              </div>
+
+              <div class="two-col">
+                <!-- Milestones -->
+                <div>
+                  <div style="font-size:13px;font-weight:500;
+                    margin-bottom:10px">Milestones</div>
+                  <div id="proj-milestones"></div>
+                </div>
+
+                <!-- Assigned cadets -->
+                <div>
+                  <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;margin-bottom:10px">
+                    <span style="font-size:13px;
+                      font-weight:500">
+                      Assigned cadets
+                    </span>
+                    <button class="icon-btn"
+                      onclick="openAssignCadet()">
+                      + Assign cadet
+                    </button>
+                  </div>
+                  <div id="proj-cadets"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -343,20 +554,24 @@
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">
-                KPI summary
+                KPI summary — 12-month programme
               </span>
             </div>
             <div id="kpi-summary"></div>
           </div>
           <div class="panel">
             <div class="panel-header">
-              <span class="panel-title">Attendance by region</span>
+              <span class="panel-title">
+                Attendance by region
+              </span>
             </div>
             <canvas id="reportRegionChart" height="200"></canvas>
           </div>
           <div class="panel">
             <div class="panel-header">
-              <span class="panel-title">Cadet attendance lookup</span>
+              <span class="panel-title">
+                Cadet attendance lookup
+              </span>
             </div>
             <div style="display:flex;gap:8px;margin-bottom:16px">
               <input class="filter-input" id="report-search"
@@ -369,7 +584,7 @@
           </div>
         </div>
 
-        <!-- USER MANAGEMENT (Admin only) -->
+        <!-- USER MANAGEMENT -->
         <div id="view-users" class="view">
           <div class="panel">
             <div class="panel-header">
@@ -378,10 +593,8 @@
             <table>
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Region</th>
-                  <th>Status</th>
+                  <th>User</th><th>Role</th>
+                  <th>Region</th><th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -413,12 +626,9 @@
           <label>Region</label>
           <select class="form-input" id="new-project">
             <option>Gauteng</option>
-            <option>eMazweni</option>
-            <option>eMangalisweni</option>
-            <option>eZenzweni</option>
-            <option>Zimbabwe</option>
-            <option>Mozambique</option>
-            <option>International</option>
+            <option>KwaZulu-Natal</option>
+            <option>Western Cape</option>
+            <option>Eastern Cape</option>
           </select>
         </div>
       </div>
@@ -431,11 +641,12 @@
         <div class="form-row">
           <label>Liaison</label>
           <input class="form-input" id="new-pm"
-            placeholder="e.g Full Name">
+            placeholder="e.g. Ms Dlamini">
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn"
+          onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary"
           onclick="submitNewCadet()">Add cadet</button>
       </div>
@@ -456,16 +667,83 @@
         <input class="form-input" id="flag-reason"
           placeholder="e.g. Missed 2 consecutive meetings">
       </div>
-      <div class="form-row" id="flag-notes-row" style="display:none">
+      <div class="form-row" id="flag-notes-row"
+        style="display:none">
         <label>Notes</label>
         <textarea class="form-input" id="flag-notes" rows="3"
-          placeholder="e.g. Correction completed satisfactorily.">
+          placeholder="e.g. Correction completed.">
         </textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeFlagModal()">Cancel</button>
+        <button class="btn"
+          onclick="closeFlagModal()">Cancel</button>
         <button class="btn btn-primary"
           onclick="submitFlagAction()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CADET PROFILE MODAL -->
+  <div class="modal-bg" id="profile-modal">
+    <div class="modal" style="width:540px">
+      <h3 id="profile-modal-title">Cadet profile</h3>
+      <input type="hidden" id="profile-cadet-id">
+
+      <div class="form-row">
+        <label>Wellbeing</label>
+        <div class="wellbeing-btns">
+          <button class="wb-btn wb-green"
+            onclick="setWellbeing('GREEN')">
+            🟢 Green — Doing well
+          </button>
+          <button class="wb-btn wb-amber"
+            onclick="setWellbeing('AMBER')">
+            🟡 Amber — Needs attention
+          </button>
+          <button class="wb-btn wb-red"
+            onclick="setWellbeing('RED')">
+            🔴 Red — Urgent support
+          </button>
+        </div>
+        <input type="hidden" id="profile-wellbeing"
+          value="GREEN">
+      </div>
+      <div class="form-row">
+        <label>Goals</label>
+        <textarea class="form-input" id="profile-goals"
+          rows="2"
+          placeholder="What is the cadet working toward?">
+        </textarea>
+      </div>
+      <div class="form-row">
+        <label>Challenges</label>
+        <textarea class="form-input" id="profile-challenges"
+          rows="2"
+          placeholder="What are they struggling with?">
+        </textarea>
+      </div>
+      <div class="form-row">
+        <label>Personal notes (confidential)</label>
+        <textarea class="form-input" id="profile-notes"
+          rows="2"
+          placeholder="Liaison notes from this meeting...">
+        </textarea>
+      </div>
+      <div class="form-row">
+        <label>Pressing information</label>
+        <input class="form-input" id="profile-pressing"
+          placeholder="Any urgent matters? Leave blank if none.">
+      </div>
+      <div class="form-row">
+        <label>Next meeting date</label>
+        <input class="form-input" id="profile-next-date"
+          type="date">
+      </div>
+      <div class="modal-footer">
+        <button class="btn"
+          onclick="closeProfileModal()">Cancel</button>
+        <button class="btn btn-primary"
+          onclick="submitProfile()">Save profile</button>
       </div>
     </div>
   </div>
@@ -483,13 +761,14 @@
         <div class="form-row">
           <label>Password</label>
           <input class="form-input" id="u-password"
-            type="password" placeholder="Min 6 characters">
+            type="password"
+            placeholder="Min 6 characters">
         </div>
       </div>
       <div class="form-row">
         <label>Full name</label>
         <input class="form-input" id="u-fullname"
-          placeholder="e.g. Name and Surname">
+          placeholder="e.g. Ms Dlamini">
       </div>
       <div class="form-two-col">
         <div class="form-row">
@@ -504,12 +783,9 @@
           <select class="form-input" id="u-region">
             <option value="ALL">All regions (Admin)</option>
             <option>Gauteng</option>
-            <option>eMazweni</option>
-            <option>eMangalisweni</option>
-            <option>eZenzweni</option>
-            <option>Zimbabwe</option>
-            <option>Mozambique</option>
-            <option>International</option>
+            <option>KwaZulu-Natal</option>
+            <option>Western Cape</option>
+            <option>Eastern Cape</option>
           </select>
         </div>
       </div>
@@ -534,13 +810,37 @@
       <div class="form-row">
         <label>New password</label>
         <input class="form-input" id="rp-password"
-          type="password" placeholder="Min 6 characters">
+          type="password"
+          placeholder="Min 6 characters">
       </div>
       <div class="modal-footer">
         <button class="btn"
           onclick="closeResetModal()">Cancel</button>
         <button class="btn btn-primary"
-          onclick="submitResetPassword()">Reset password</button>
+          onclick="submitResetPassword()">
+          Reset password
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSIGN CADET TO PROJECT MODAL -->
+  <div class="modal-bg" id="assign-modal">
+    <div class="modal">
+      <h3>Assign cadet to project</h3>
+      <input type="hidden" id="assign-project-id">
+      <div class="form-row">
+        <label>Search cadet</label>
+        <input class="form-input" id="assign-search"
+          placeholder="Type cadet name..."
+          oninput="searchAssignCadet()">
+      </div>
+      <div id="assign-results"
+        style="max-height:200px;overflow-y:auto;
+        margin-top:8px"></div>
+      <div class="modal-footer">
+        <button class="btn"
+          onclick="closeAssignModal()">Close</button>
       </div>
     </div>
   </div>
