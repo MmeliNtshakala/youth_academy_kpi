@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRSH KPI System</title>
+  <title>TRSH Youth Academy KPI System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -81,7 +81,7 @@
             <div class="metric-card">
               <div class="metric-label">Total cadets</div>
               <div class="metric-value" id="m-total">—</div>
-              <div class="metric-sub">12-month programme</div>
+              <div class="metric-sub">3 Year Programme</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Active (no flag)</div>
@@ -183,9 +183,12 @@
                   id="filter-project" onchange="loadCadets()">
                   <option value="">All regions</option>
                   <option>Gauteng</option>
-                  <option>KwaZulu-Natal</option>
-                  <option>Western Cape</option>
-                  <option>Eastern Cape</option>
+                  <option>Emazweni</option>
+                  <option>Emangalisweni</option>
+                  <option>Ezenzweni</option>
+                  <option>Zimbabwe</option>
+                  <option>Mozambique</option>
+                  <option>International</option>
                 </select>
               </div>
             </div>
@@ -238,7 +241,7 @@
                   Orange — Formal action
                 </div>
                 <p>No re-engagement within 5 days of Yellow.</p>
-                <p>Removed from team. Referred to Liaison.</p>
+                <p>Removed from team. Referred to Liaison and National Youth Academy Committee.</p>
               </div>
               <div class="rule-card red-card">
                 <div class="rule-title red-text">
@@ -262,8 +265,11 @@
                 <div class="form-row">
                   <label>Meeting type</label>
                   <select class="form-input" id="reg-type">
-                    <option>Sunday Session</option>
+                    <option>Sunday- Izambulo</option>
                     <option>Special Event</option>
+                    <option>Provincial Meeting</option>
+                    <option>National Meeting</option>
+                    
                   </select>
                 </div>
                 <div class="form-row">
@@ -318,9 +324,12 @@
                   onchange="loadMeetings()">
                   <option value="">All regions</option>
                   <option>Gauteng</option>
-                  <option>KwaZulu-Natal</option>
-                  <option>Western Cape</option>
-                  <option>Eastern Cape</option>
+                  <option>Emazweni</option>
+                  <option>Emangalisweni</option>
+                  <option>Ezenzweni</option>
+                  <option>Zimbabwe</option>
+                  <option>Mozambique</option>
+                  <option>International</option>
                 </select>
               </div>
               <table>
@@ -554,7 +563,7 @@
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">
-                KPI summary — 12-month programme
+                KPI summary — 3 year pro
               </span>
             </div>
             <div id="kpi-summary"></div>
@@ -614,7 +623,7 @@
       <div class="form-row">
         <label>Full name</label>
         <input class="form-input" id="new-name"
-          placeholder="e.g. Thabo Nkosi">
+          placeholder="e.g. Name and Surname">
       </div>
       <div class="form-two-col">
         <div class="form-row">
@@ -626,9 +635,12 @@
           <label>Region</label>
           <select class="form-input" id="new-project">
             <option>Gauteng</option>
-            <option>KwaZulu-Natal</option>
-            <option>Western Cape</option>
-            <option>Eastern Cape</option>
+            <option>Emazweni</option>
+            <option>Emangalisweni</option>
+            <option>Ezenzweni</option>
+            <option>Zimbabwe</option>
+            <option>Mozambique</option>
+            <option>International</option>
           </select>
         </div>
       </div>
@@ -641,7 +653,7 @@
         <div class="form-row">
           <label>Liaison</label>
           <input class="form-input" id="new-pm"
-            placeholder="e.g. Ms Dlamini">
+            placeholder="e.g. Liason / PS Name">
         </div>
       </div>
       <div class="modal-footer">
@@ -756,7 +768,7 @@
         <div class="form-row">
           <label>Username</label>
           <input class="form-input" id="u-username"
-            placeholder="e.g. ms.dlamini">
+            placeholder="e.g. Name & Surname">
         </div>
         <div class="form-row">
           <label>Password</label>
@@ -768,14 +780,14 @@
       <div class="form-row">
         <label>Full name</label>
         <input class="form-input" id="u-fullname"
-          placeholder="e.g. Ms Dlamini">
+          placeholder="e.g. Name and Surname">
       </div>
       <div class="form-two-col">
         <div class="form-row">
           <label>Role</label>
           <select class="form-input" id="u-role">
             <option value="LIAISON">Liaison</option>
-            <option value="ADMIN">Admin</option>
+            <option value="National Committee">Admin</option>
           </select>
         </div>
         <div class="form-row">
@@ -783,9 +795,12 @@
           <select class="form-input" id="u-region">
             <option value="ALL">All regions (Admin)</option>
             <option>Gauteng</option>
-            <option>KwaZulu-Natal</option>
-            <option>Western Cape</option>
-            <option>Eastern Cape</option>
+            <option>Emazweni</option>
+            <option>Emangalisweni</option>
+            <option>Ezenzweni</option>
+            <option>Zimbabwe</option>
+            <option>Mozambique</option>
+            <option>International</option>
           </select>
         </div>
       </div>
