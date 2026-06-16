@@ -1,54 +1,55 @@
-// ── Current user ──────────────────────────────────────────────
-let currentUser = null;
+// ── State ─────────────────────────────────────────────────────
+let currentUser     = null;
 let currentFlagAction = null;
-let flagChart = null;
-let projectChart = null;
+let flagChart       = null;
+let projectChart    = null;
 let reportRegionChart = null;
-let currentMeetingId = null;
-let registerEntries = {};
+let currentMeetingId  = null;
+let registerEntries   = {};
+let currentProjectId  = null;
+let milestoneCount    = 0;
 
-// ── Boot — load current user first ───────────────────────────
+// ── Boot ──────────────────────────────────────────────────────
 async function boot() {
   try {
     currentUser = await get('/api/me');
     applyUserContext();
     loadDashboard();
   } catch (e) {
-    // Not logged in — redirect to login
     window.location.href = '/login';
   }
 }
 
-// ── Apply user context to the UI ──────────────────────────────
+// ── Apply user context ────────────────────────────────────────
 function applyUserContext() {
   if (!currentUser) return;
-
-  // Update sidebar name and role
   const nameEl = document.getElementById('user-name');
   const roleEl = document.getElementById('user-role');
   if (nameEl) nameEl.textContent = currentUser.fullName;
-  if (roleEl) roleEl.textContent =
-    currentUser.isAdmin
-      ? 'Admin · All regions'
-      : 'Liaison · ' + currentUser.region;
+  if (roleEl) roleEl.textContent = currentUser.isAdmin
+    ? 'Admin · All regions'
+    : 'Liaison · ' + currentUser.region;
 
-  // Show Users tab only for Admin
   const usersTab = document.getElementById('nav-users');
-  if (usersTab) {
-    usersTab.style.display = currentUser.isAdmin ? 'block' : 'none';
-  }
+  if (usersTab)
+    usersTab.style.display =
+      currentUser.isAdmin ? 'block' : 'none';
 
-  // Show/hide admin-only action buttons
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = currentUser.isAdmin ? '' : 'none';
   });
+
+  // Liaisons always create PROVINCIAL projects
+  const scopeRow =
+    document.getElementById('proj-scope-row');
+  if (scopeRow)
+    scopeRow.style.display =
+      currentUser.isAdmin ? 'block' : 'none';
 }
 
-// ── Region filter — Liaison sees only their region ────────────
 function myRegion() {
   return currentUser && !currentUser.isAdmin
-    ? currentUser.region
-    : null;
+    ? currentUser.region : null;
 }
 
 // ── View switching ────────────────────────────────────────────
@@ -65,32 +66,40 @@ function showView(id, el) {
     cadets:    'Cadet registry',
     flags:     'Flags & actions',
     register:  'Register',
+    projects:  'Projects',
     reports:   'Reports',
     users:     'User management'
   };
-  document.getElementById('page-title').textContent = titles[id];
+  document.getElementById('page-title').textContent =
+    titles[id] || id;
 
   const btn = document.getElementById('top-action-btn');
   if (btn) btn.textContent =
-    id === 'register' ? '+ New meeting' :
-    id === 'users'    ? '+ Add user'    : '+ Add cadet';
+    id === 'register' ? '+ New meeting'  :
+    id === 'users'    ? '+ Add user'     :
+    id === 'projects' ? '+ New project'  : '+ Add cadet';
 
   if (id === 'dashboard') loadDashboard();
   if (id === 'cadets')    loadCadets();
   if (id === 'flags')     loadFlagView();
   if (id === 'register')  loadRegisterLanding();
+  if (id === 'projects')  loadProjects();
   if (id === 'reports')   loadReports();
   if (id === 'users')     loadUsers();
 }
 
 function handleTopAction() {
-  const view = document.querySelector('.view.active').id;
+  const view =
+    document.querySelector('.view.active').id;
   if (view === 'view-register') {
     document.getElementById('reg-date').value =
       new Date().toISOString().split('T')[0];
     window.scrollTo(0, 0);
   } else if (view === 'view-users') {
     openUserModal();
+  } else if (view === 'view-projects') {
+    backToProjects();
+    window.scrollTo(0, 0);
   } else {
     openModal();
   }
@@ -99,7 +108,9 @@ function handleTopAction() {
 // ── API helpers ───────────────────────────────────────────────
 async function get(url) {
   const res = await fetch(url);
-  if (res.status === 401) { window.location.href = '/login'; return; }
+  if (res.status === 401) {
+    window.location.href = '/login'; return;
+  }
   if (!res.ok) throw new Error('GET failed: ' + url);
   return res.json();
 }
@@ -110,7 +121,9 @@ async function post(url, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if (res.status === 401) { window.location.href = '/login'; return; }
+  if (res.status === 401) {
+    window.location.href = '/login'; return;
+  }
   if (!res.ok) throw new Error('POST failed: ' + url);
   return res.json();
 }
@@ -121,7 +134,9 @@ async function put(url, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body || {})
   });
-  if (res.status === 401) { window.location.href = '/login'; return; }
+  if (res.status === 401) {
+    window.location.href = '/login'; return;
+  }
   if (!res.ok) throw new Error('PUT failed: ' + url);
   return res.json();
 }
@@ -141,11 +156,54 @@ async function loadDashboard() {
     renderFlagChart(data);
     renderProjectChart(data.attendanceByProject);
     renderRecentActivity(data.recentActivity);
-  } catch (e) { console.error('Dashboard load failed:', e); }
+  } catch (e) {
+    console.error('Dashboard load failed:', e);
+  }
+
+  // Load wellbeing summary
+  try {
+    const wb = await get('/api/profiles/wellbeing');
+    const wg = document.getElementById('wb-green');
+    const wa = document.getElementById('wb-amber');
+    const wr = document.getElementById('wb-red');
+    if (wg) wg.textContent = wb.green    || 0;
+    if (wa) wa.textContent = wb.amber    || 0;
+    if (wr) wr.textContent = wb.red      || 0;
+  } catch (e) {
+    console.error('Wellbeing load failed:', e);
+  }
+
+  // Load pressing matters
+  try {
+    const pressing = await get('/api/profiles/pressing');
+    const panel =
+      document.getElementById('pressing-panel');
+    const list =
+      document.getElementById('pressing-list');
+    if (pressing && pressing.length > 0 && panel && list) {
+      panel.style.display = 'block';
+      list.innerHTML = pressing.map(p => `
+        <div class="pressing-item">
+          <div class="pressing-name">${p.cadetName}
+            <span class="cadet-id">${p.cadetCode}</span>
+          </div>
+          <div class="pressing-info">${p.pressingInfo}</div>
+          <div class="pressing-meta">
+            ${p.region} · ${p.recordedDate} ·
+            ${p.recordedBy}
+          </div>
+        </div>`).join('');
+    } else if (panel) {
+      panel.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Pressing load failed:', e);
+  }
 }
 
 function renderFlagChart(data) {
-  const ctx = document.getElementById('flagChart').getContext('2d');
+  const ctx =
+    document.getElementById('flagChart').getContext('2d');
   if (flagChart) flagChart.destroy();
   flagChart = new Chart(ctx, {
     type: 'doughnut',
@@ -154,7 +212,8 @@ function renderFlagChart(data) {
       datasets: [{
         data: [data.activeCount, data.yellowCount,
                data.orangeCount, data.redCount],
-        backgroundColor: ['#639922','#EF9F27','#D85A30','#E24B4A'],
+        backgroundColor:
+          ['#639922','#EF9F27','#D85A30','#E24B4A'],
         borderWidth: 0
       }]
     },
@@ -181,7 +240,8 @@ function renderProjectChart(byProject) {
       datasets: [{
         label: 'Avg attendance %',
         data: values,
-        backgroundColor: ['#378ADD','#1D9E75','#7F77DD','#EF9F27'],
+        backgroundColor:
+          ['#378ADD','#1D9E75','#7F77DD','#EF9F27'],
         borderWidth: 0
       }]
     },
@@ -198,20 +258,24 @@ function renderRecentActivity(events) {
   const el = document.getElementById('recent-activity');
   if (!events || events.length === 0) {
     el.innerHTML =
-      '<p style="color:#aaa;font-size:12px">No recent activity.</p>';
+      '<p style="color:#aaa;font-size:12px">' +
+      'No recent activity.</p>';
     return;
   }
   const dotClass = {
     YELLOW: 'yellow', ORANGE: 'orange', RED: 'red',
-    RESTORED: 'restored', NOTICE_SENT: 'notice', PLAN_AGREED: 'plan'
+    RESTORED: 'restored', NOTICE_SENT: 'notice',
+    PLAN_AGREED: 'plan'
   };
   el.innerHTML = `<div class="timeline">` +
     events.map(e => `
       <div class="tl-item">
-        <div class="tl-dot ${dotClass[e.eventType] || ''}"></div>
+        <div class="tl-dot
+          ${dotClass[e.eventType] || ''}"></div>
         <div>
           <div class="tl-text">
-            <strong>${e.cadetName}</strong> — ${e.description}
+            <strong>${e.cadetName}</strong>
+            — ${e.description}
           </div>
           <div class="tl-date">
             ${e.eventDate} · ${e.triggeredBy}
@@ -222,15 +286,20 @@ function renderRecentActivity(events) {
 
 // ── Cadets ────────────────────────────────────────────────────
 async function loadCadets() {
-  const search  = document.getElementById('search').value.trim();
-  const flag    = document.getElementById('filter-flag').value;
+  const search  =
+    document.getElementById('search').value.trim();
+  const flag    =
+    document.getElementById('filter-flag').value;
   const region  = myRegion() ||
     document.getElementById('filter-project').value;
 
   let url = '/api/cadets?';
-  if (search) url += 'search=' + encodeURIComponent(search) + '&';
-  if (flag)   url += 'flag='   + encodeURIComponent(flag) + '&';
-  if (region) url += 'project='+ encodeURIComponent(region) + '&';
+  if (search)
+    url += 'search=' + encodeURIComponent(search) + '&';
+  if (flag)
+    url += 'flag='   + encodeURIComponent(flag) + '&';
+  if (region)
+    url += 'project='+ encodeURIComponent(region) + '&';
 
   try {
     const cadets = await get(url);
@@ -241,7 +310,8 @@ async function loadCadets() {
 function renderCadetTable(cadets) {
   const regions = myRegion()
     ? [myRegion()]
-    : ['Gauteng','eMazweni','eMangalisweni','eZenzweni', 'International', 'Zimbabwe', 'Mozambique'];
+    : ['Gauteng','Emazweni','Emangalisweni','Ezenzweni',
+      'Zimbabwe','Mozambique','International'];
 
   const grouped = {};
   regions.forEach(r => grouped[r] = []);
@@ -251,43 +321,55 @@ function renderCadetTable(cadets) {
     else grouped[r] = [c];
   });
 
-  const container = document.getElementById('cadet-regions');
-  const countEl   = document.getElementById('table-count');
+  const container =
+    document.getElementById('cadet-regions');
+  const countEl =
+    document.getElementById('table-count');
   let html = '';
 
   regions.forEach(region => {
     const list = grouped[region] || [];
     if (list.length === 0) return;
-
     const regionKey = region.replace(/\s/g,'-');
     const avgAtt = Math.round(
-      list.reduce((s,c) => s + c.attendancePercent, 0) / list.length
+      list.reduce((s,c) =>
+        s + c.attendancePercent, 0) / list.length
     );
 
     html += `
       <div class="region-folder">
         <div class="region-folder-header"
           onclick="toggleFolder('${regionKey}')">
-          <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;
+            gap:10px">
             <span class="folder-arrow"
               id="arrow-${regionKey}">▶</span>
-            <span class="region-folder-name">${region}</span>
+            <span class="region-folder-name">
+              ${region}
+            </span>
             <span class="region-folder-count">
               ${list.length} cadets
             </span>
           </div>
-          <div style="display:flex;align-items:center;gap:12px">
-            ${list.filter(c=>c.flagStatus==='YELLOW').length > 0
+          <div style="display:flex;align-items:center;
+            gap:12px">
+            ${list.filter(c=>
+              c.flagStatus==='YELLOW').length > 0
               ? `<span class="flag flag-yellow">
-                  ${list.filter(c=>c.flagStatus==='YELLOW').length}
+                  ${list.filter(c=>
+                    c.flagStatus==='YELLOW').length}
                   yellow</span>` : ''}
-            ${list.filter(c=>c.flagStatus==='ORANGE').length > 0
+            ${list.filter(c=>
+              c.flagStatus==='ORANGE').length > 0
               ? `<span class="flag flag-orange">
-                  ${list.filter(c=>c.flagStatus==='ORANGE').length}
+                  ${list.filter(c=>
+                    c.flagStatus==='ORANGE').length}
                   orange</span>` : ''}
-            ${list.filter(c=>c.flagStatus==='RED').length > 0
+            ${list.filter(c=>
+              c.flagStatus==='RED').length > 0
               ? `<span class="flag flag-red">
-                  ${list.filter(c=>c.flagStatus==='RED').length}
+                  ${list.filter(c=>
+                    c.flagStatus==='RED').length}
                   red</span>` : ''}
             <span style="font-size:12px;color:#888">
               avg ${avgAtt}% attendance
@@ -299,12 +381,9 @@ function renderCadetTable(cadets) {
           <table>
             <thead>
               <tr>
-                <th>Cadet</th>
-                <th>Flag</th>
-                <th>Attendance</th>
-                <th>Last contact</th>
-                <th>Liaison</th>
-                <th>Actions</th>
+                <th>Cadet</th><th>Flag</th>
+                <th>Attendance</th><th>Last contact</th>
+                <th>Liaison</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -316,8 +395,12 @@ function renderCadetTable(cadets) {
                         ${initials(c.fullName)}
                       </div>
                       <div>
-                        <div class="cadet-name">${c.fullName}</div>
-                        <div class="cadet-id">${c.cadetCode}</div>
+                        <div class="cadet-name">
+                          ${c.fullName}
+                        </div>
+                        <div class="cadet-id">
+                          ${c.cadetCode}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -332,6 +415,12 @@ function renderCadetTable(cadets) {
                   <td>
                     <div class="action-btns">
                       ${actionButtons(c)}
+                      <button class="icon-btn"
+                        onclick="openProfileModal(
+                          ${c.id},'${c.fullName
+                            .replace(/'/g,"\\'")}')">
+                        Profile
+                      </button>
                     </div>
                   </td>
                 </tr>`).join('')}
@@ -348,8 +437,10 @@ function renderCadetTable(cadets) {
 }
 
 function toggleFolder(regionKey) {
-  const body  = document.getElementById('body-'  + regionKey);
-  const arrow = document.getElementById('arrow-' + regionKey);
+  const body  =
+    document.getElementById('body-'  + regionKey);
+  const arrow =
+    document.getElementById('arrow-' + regionKey);
   if (!body) return;
   const isOpen = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : 'block';
@@ -358,7 +449,8 @@ function toggleFolder(regionKey) {
 
 function actionButtons(c) {
   const btns = [];
-  if (c.flagStatus === 'NONE' || c.flagStatus === 'YELLOW')
+  if (c.flagStatus === 'NONE' ||
+      c.flagStatus === 'YELLOW')
     btns.push(`<button class="icon-btn"
       onclick="openFlagModal(${c.id},'yellow')">
       Yellow</button>`);
@@ -370,8 +462,9 @@ function actionButtons(c) {
     btns.push(`<button class="icon-btn"
       onclick="openFlagModal(${c.id},'red')">
       Red</button>`);
-  if (c.flagStatus === 'RED' && currentUser && currentUser.isAdmin)
-    btns.push(`<button class="icon-btn admin-only"
+  if (c.flagStatus === 'RED' &&
+      currentUser && currentUser.isAdmin)
+    btns.push(`<button class="icon-btn"
       onclick="openFlagModal(${c.id},'restore')">
       Restore</button>`);
   return btns.join('');
@@ -387,27 +480,34 @@ async function loadFlagView() {
     if (fy) fy.textContent = data.yellowCount  || 0;
     if (fo) fo.textContent = data.orangeCount  || 0;
     if (fr) fr.textContent = data.redCount     || 0;
-  } catch (e) { console.error('Dashboard metrics failed:', e); }
-
+  } catch (e) {
+    console.error('Dashboard metrics failed:', e);
+  }
   try {
     const region = myRegion();
     const yUrl = '/api/cadets?flag=YELLOW' +
-      (region ? '&project=' + encodeURIComponent(region) : '');
+      (region
+        ? '&project=' + encodeURIComponent(region) : '');
     const oUrl = '/api/cadets?flag=ORANGE' +
-      (region ? '&project=' + encodeURIComponent(region) : '');
+      (region
+        ? '&project=' + encodeURIComponent(region) : '');
     const rUrl = '/api/cadets?flag=RED' +
-      (region ? '&project=' + encodeURIComponent(region) : '');
+      (region
+        ? '&project=' + encodeURIComponent(region) : '');
     const y = await get(yUrl);
     const o = await get(oUrl);
     const r = await get(rUrl);
     renderFlagTable([...y, ...o, ...r]);
-  } catch (e) { console.error('Flagged cadets failed:', e); }
+  } catch (e) {
+    console.error('Flagged cadets failed:', e);
+  }
 }
 
 function renderFlagTable(cadets) {
   const regions = myRegion()
     ? [myRegion()]
-    : ['Gauteng','eMazweni','eMangalisweni','eZenzweni', 'Zimbabwe', 'Internationl', 'Mozambique'];
+    : ['Gauteng','Emazweni','Emangalisweni','Ezenzweni',
+      'Zimbabwe','Mozambique','International'];
 
   const grouped = {};
   regions.forEach(r => grouped[r] = []);
@@ -417,13 +517,14 @@ function renderFlagTable(cadets) {
     else grouped[r] = [c];
   });
 
-  const container = document.getElementById('flag-table-container');
+  const container =
+    document.getElementById('flag-table-container');
   if (!container) return;
 
   if (cadets.length === 0) {
     container.innerHTML =
-      '<p style="color:#aaa;font-size:13px;padding:8px 0">' +
-      'No flagged cadets.</p>';
+      '<p style="color:#aaa;font-size:13px;' +
+      'padding:8px 0">No flagged cadets.</p>';
     return;
   }
 
@@ -436,39 +537,48 @@ function renderFlagTable(cadets) {
       <div class="region-folder">
         <div class="region-folder-header"
           onclick="toggleFlagFolder('${regionKey}')">
-          <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;
+            gap:10px">
             <span class="folder-arrow"
               id="flag-arrow-${regionKey}">▶</span>
-            <span class="region-folder-name">${region}</span>
+            <span class="region-folder-name">
+              ${region}
+            </span>
             <span class="region-folder-count">
               ${list.length} flagged
             </span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            ${list.filter(c=>c.flagStatus==='YELLOW').length > 0
+          <div style="display:flex;align-items:center;
+            gap:8px">
+            ${list.filter(c=>
+              c.flagStatus==='YELLOW').length > 0
               ? `<span class="flag flag-yellow">
-                ${list.filter(c=>c.flagStatus==='YELLOW').length}
+                ${list.filter(c=>
+                  c.flagStatus==='YELLOW').length}
                 yellow</span>` : ''}
-            ${list.filter(c=>c.flagStatus==='ORANGE').length > 0
+            ${list.filter(c=>
+              c.flagStatus==='ORANGE').length > 0
               ? `<span class="flag flag-orange">
-                ${list.filter(c=>c.flagStatus==='ORANGE').length}
+                ${list.filter(c=>
+                  c.flagStatus==='ORANGE').length}
                 orange</span>` : ''}
-            ${list.filter(c=>c.flagStatus==='RED').length > 0
+            ${list.filter(c=>
+              c.flagStatus==='RED').length > 0
               ? `<span class="flag flag-red">
-                ${list.filter(c=>c.flagStatus==='RED').length}
+                ${list.filter(c=>
+                  c.flagStatus==='RED').length}
                 red</span>` : ''}
           </div>
         </div>
         <div class="region-folder-body"
-          id="flag-body-${regionKey}" style="display:none">
+          id="flag-body-${regionKey}"
+          style="display:none">
           <table>
             <thead>
               <tr>
-                <th>Cadet</th>
-                <th>Flag</th>
+                <th>Cadet</th><th>Flag</th>
                 <th>Days since flag</th>
-                <th>Liaison</th>
-                <th>Next action</th>
+                <th>Liaison</th><th>Next action</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -481,14 +591,22 @@ function renderFlagTable(cadets) {
                         ${initials(c.fullName)}
                       </div>
                       <div>
-                        <div class="cadet-name">${c.fullName}</div>
-                        <div class="cadet-id">${c.cadetCode}</div>
+                        <div class="cadet-name">
+                          ${c.fullName}
+                        </div>
+                        <div class="cadet-id">
+                          ${c.cadetCode}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td>${flagBadge(c.flagStatus)}</td>
-                  <td style="font-size:12px">${c.daysSinceFlag}d</td>
-                  <td style="font-size:12px">${c.projectManager}</td>
+                  <td style="font-size:12px">
+                    ${c.daysSinceFlag}d
+                  </td>
+                  <td style="font-size:12px">
+                    ${c.projectManager}
+                  </td>
                   <td style="font-size:11px;color:#888">
                     ${c.flagStatus === 'YELLOW'
                       ? 'Escalate to Orange if no re-engagement'
@@ -512,12 +630,521 @@ function renderFlagTable(cadets) {
 }
 
 function toggleFlagFolder(regionKey) {
-  const body  = document.getElementById('flag-body-' + regionKey);
-  const arrow = document.getElementById('flag-arrow-' + regionKey);
+  const body =
+    document.getElementById('flag-body-' + regionKey);
+  const arrow =
+    document.getElementById('flag-arrow-' + regionKey);
   if (!body) return;
   const isOpen = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : 'block';
   arrow.textContent  = isOpen ? '▶' : '▼';
+}
+
+// ── Cadet Profile modal ───────────────────────────────────────
+function openProfileModal(cadetId, cadetName) {
+  document.getElementById('profile-cadet-id').value =
+    cadetId;
+  document.getElementById('profile-modal-title')
+    .textContent = 'Profile — ' + cadetName;
+  document.getElementById('profile-goals').value = '';
+  document.getElementById('profile-challenges').value = '';
+  document.getElementById('profile-notes').value = '';
+  document.getElementById('profile-pressing').value = '';
+  document.getElementById('profile-next-date').value = '';
+  setWellbeing('GREEN');
+  document.getElementById('profile-modal')
+    .classList.add('open');
+}
+
+function closeProfileModal() {
+  document.getElementById('profile-modal')
+    .classList.remove('open');
+}
+
+function setWellbeing(value) {
+  document.getElementById('profile-wellbeing').value =
+    value;
+  document.querySelectorAll('.wb-btn').forEach(b => {
+    b.classList.remove('wb-selected');
+  });
+  const btn = document.querySelector(
+    '.wb-' + value.toLowerCase()
+  );
+  if (btn) btn.classList.add('wb-selected');
+}
+
+async function submitProfile() {
+  const cadetId =
+    document.getElementById('profile-cadet-id').value;
+  const body = {
+    wellbeing:
+      document.getElementById('profile-wellbeing').value,
+    goals:
+      document.getElementById('profile-goals').value.trim(),
+    challenges:
+      document.getElementById('profile-challenges')
+        .value.trim(),
+    personalNotes:
+      document.getElementById('profile-notes').value.trim(),
+    pressingInfo:
+      document.getElementById('profile-pressing')
+        .value.trim(),
+    nextMeetingDate:
+      document.getElementById('profile-next-date').value,
+    recordedBy: currentUser
+      ? currentUser.fullName : 'Liaison'
+  };
+  try {
+    const result = await post(
+      '/api/cadets/' + cadetId + '/profile', body
+    );
+    if (result.success) {
+      closeProfileModal();
+      loadDashboard();
+      alert('Profile saved successfully.');
+    } else {
+      alert(result.message);
+    }
+  } catch (e) { alert('Failed to save profile.'); }
+}
+
+// ── Projects ──────────────────────────────────────────────────
+async function loadProjects() {
+  backToProjects();
+  try {
+    const projects = await get('/api/projects');
+    renderProjectsList(projects);
+    renderProjectsSummary(projects);
+  } catch (e) {
+    console.error('Projects load failed:', e);
+  }
+  // Initialise milestone inputs
+  if (document.getElementById('milestone-inputs')
+      .children.length === 0) {
+    addMilestoneInput();
+    addMilestoneInput();
+  }
+}
+
+function renderProjectsSummary(projects) {
+  const active = projects.filter(p =>
+    p.status === 'ACTIVE'
+  );
+  const el =
+    document.getElementById('projects-summary');
+  if (!el) return;
+
+  if (active.length === 0) {
+    el.innerHTML =
+      '<p style="color:#aaa;font-size:12px">' +
+      'No active projects yet.</p>';
+    return;
+  }
+
+  el.innerHTML = active.slice(0, 5).map(p => `
+    <div class="pending-card"
+      style="cursor:pointer"
+      onclick="openProjectDetail(${p.id})">
+      <div>
+        <div style="font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:#aaa">
+          ${p.scope} ·
+          ${p.region === 'ALL' ? 'All regions' : p.region}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:500;
+          color:${p.progressPercent === 100
+            ? '#3b6d11' : '#1a1a1a'}">
+          ${p.progressPercent}%
+        </div>
+        <div style="font-size:11px;color:#aaa">progress</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderProjectsList(projects) {
+  const filter =
+    document.getElementById('proj-filter-status').value;
+  const filtered = filter
+    ? projects.filter(p => p.status === filter)
+    : projects;
+
+  const el = document.getElementById('projects-list');
+  if (!el) return;
+
+  if (filtered.length === 0) {
+    el.innerHTML =
+      '<p style="color:#aaa;font-size:13px;padding:12px 0">' +
+      'No projects found. Create one above.</p>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(p => `
+    <div class="project-row"
+      onclick="openProjectDetail(${p.id})">
+      <div class="project-row-left">
+        <div style="display:flex;align-items:center;
+          gap:8px">
+          <span style="font-weight:500">${p.name}</span>
+          <span class="flag ${p.scope === 'NATIONAL'
+            ? 'flag-none' : 'flag-yellow'}">
+            ${p.scope === 'NATIONAL'
+              ? 'National' : 'Provincial'}
+          </span>
+          ${p.status === 'COMPLETED'
+            ? '<span class="flag flag-none">✅ Completed</span>'
+            : ''}
+        </div>
+        <div style="font-size:12px;color:#888;margin-top:2px">
+          ${p.region === 'ALL'
+            ? 'All regions' : p.region} ·
+          Created by ${p.createdBy}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;
+        gap:16px">
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:500">
+            ${p.progressPercent}%
+          </div>
+          <div style="font-size:11px;color:#aaa">progress</div>
+        </div>
+        <div style="width:80px;height:6px;
+          background:#e8e8e4;border-radius:3px;
+          overflow:hidden">
+          <div style="width:${p.progressPercent}%;
+            height:100%;background:${
+              p.progressPercent === 100
+                ? '#3b6d11' : '#1d9e75'};
+            border-radius:3px"></div>
+        </div>
+        ${p.badgeAwarded
+          ? `<span class="badge-chip">
+              ⭐ ${p.badgeName}
+             </span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function openProjectDetail(projectId) {
+  currentProjectId = projectId;
+  document.getElementById('projects-landing')
+    .style.display = 'none';
+  document.getElementById('project-detail')
+    .style.display = 'block';
+
+  try {
+    const data = await get('/api/projects/' + projectId);
+    const p = data.project;
+
+    document.getElementById('proj-detail-name')
+      .textContent = p.name;
+    document.getElementById('proj-detail-meta')
+      .textContent =
+        (p.scope === 'NATIONAL'
+          ? 'National' : 'Provincial') +
+        ' · ' +
+        (p.region === 'ALL'
+          ? 'All regions' : p.region) +
+        ' · Created by ' + p.createdBy +
+        (p.targetEndDate
+          ? ' · Target: ' + p.targetEndDate : '');
+
+    // Progress
+    const pct = p.progressPercent;
+    document.getElementById('proj-pct').textContent =
+      pct + '%';
+    const fill =
+      document.getElementById('proj-progress-fill');
+    if (fill) {
+      fill.style.width = pct + '%';
+      fill.style.background =
+        pct === 100 ? '#3b6d11' : '#1d9e75';
+    }
+
+    // Milestones
+    renderMilestones(data.milestones, p.status);
+
+    // Assigned cadets
+    renderAssignedCadets(data.assigned, p.id);
+
+  } catch (e) {
+    console.error('Project detail failed:', e);
+  }
+}
+
+function renderMilestones(milestones, projectStatus) {
+  const el = document.getElementById('proj-milestones');
+  if (!el) return;
+  if (!milestones || milestones.length === 0) {
+    el.innerHTML =
+      '<p style="color:#aaa;font-size:12px">' +
+      'No milestones.</p>';
+    return;
+  }
+  el.innerHTML = milestones.map(m => `
+    <div class="milestone-row
+      ${m.completed ? 'milestone-done' : ''}">
+      <div class="milestone-check">
+        ${m.completed
+          ? '<span style="color:#3b6d11">✅</span>'
+          : `<button class="icon-btn"
+              style="font-size:10px"
+              onclick="completeMilestone(${m.id})">
+              Mark done
+             </button>`}
+      </div>
+      <div class="milestone-info">
+        <div class="milestone-title">${m.title}</div>
+        ${m.description
+          ? `<div class="milestone-desc">
+              ${m.description}
+             </div>` : ''}
+        ${m.targetDate
+          ? `<div class="milestone-date">
+              Target: ${m.targetDate}
+              ${m.isOverdue && !m.completed
+                ? '<span style="color:#a32d2d"> ⚠ Overdue</span>'
+                : ''}
+             </div>` : ''}
+        ${m.completed
+          ? `<div style="font-size:11px;color:#3b6d11">
+              Completed ${m.completedDate}
+              by ${m.completedBy}
+             </div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function renderAssignedCadets(assigned, projectId) {
+  const el = document.getElementById('proj-cadets');
+  if (!el) return;
+  if (!assigned || assigned.length === 0) {
+    el.innerHTML =
+      '<p style="color:#aaa;font-size:12px">' +
+      'No cadets assigned yet.</p>';
+    return;
+  }
+  el.innerHTML = assigned.map(cp => `
+    <div class="pending-card">
+      <div>
+        <div style="font-weight:500">
+          ${cp.cadetName}
+        </div>
+        <div style="font-size:11px;color:#aaa">
+          ${cp.cadetCode} · ${cp.region}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;
+        gap:8px">
+        ${cp.badgeEarned
+          ? `<span class="badge-chip">
+              ⭐ ${cp.badgeName}
+             </span>` : ''}
+        <span class="flag
+          ${cp.participationStatus === 'ACTIVE'
+            ? 'flag-none' : 'flag-red'}">
+          ${cp.participationStatus}
+        </span>
+      </div>
+    </div>`).join('');
+}
+
+async function completeMilestone(milestoneId) {
+  try {
+    const result = await post(
+      '/api/milestones/' + milestoneId + '/complete',
+      { completedBy: currentUser
+          ? currentUser.fullName : 'Admin' }
+    );
+    if (result.success) {
+      // Refresh project detail
+      openProjectDetail(currentProjectId);
+      loadProjects();
+      if (result.badgeNotice) {
+        setTimeout(() =>
+          alert(result.badgeNotice), 300);
+      }
+    } else {
+      alert(result.message);
+    }
+  } catch (e) { alert('Failed to complete milestone.'); }
+}
+
+function backToProjects() {
+  document.getElementById('projects-landing')
+    .style.display = 'block';
+  document.getElementById('project-detail')
+    .style.display = 'none';
+  currentProjectId = null;
+}
+
+// Add milestone input row
+function addMilestoneInput() {
+  milestoneCount++;
+  const container =
+    document.getElementById('milestone-inputs');
+  const div = document.createElement('div');
+  div.className = 'milestone-input-row';
+  div.id = 'ms-row-' + milestoneCount;
+  div.innerHTML = `
+    <input class="form-input"
+      id="ms-title-${milestoneCount}"
+      placeholder="Milestone ${milestoneCount} title"
+      style="flex:1">
+    <input class="form-input"
+      id="ms-date-${milestoneCount}"
+      type="date"
+      style="width:140px"
+      title="Target date (optional)">
+    <button class="icon-btn"
+      onclick="removeMilestone('ms-row-${milestoneCount}')"
+      style="flex-shrink:0">✕</button>`;
+  container.appendChild(div);
+}
+
+function removeMilestone(rowId) {
+  const row = document.getElementById(rowId);
+  if (row) row.remove();
+}
+
+function toggleProjectScope() {
+  // Scope toggle — Liaison always PROVINCIAL
+  // Admin can choose
+}
+
+async function createProject() {
+  const name =
+    document.getElementById('proj-name').value.trim();
+  const desc =
+    document.getElementById('proj-desc').value.trim();
+  const badge =
+    document.getElementById('proj-badge').value.trim()
+    || name;
+  const start =
+    document.getElementById('proj-start').value;
+  const end =
+    document.getElementById('proj-end').value;
+  const scope = currentUser && currentUser.isAdmin
+    ? (document.getElementById('proj-scope')?.value
+       || 'NATIONAL')
+    : 'REGIONAL';
+  const region = myRegion() || 'ALL';
+
+  if (!name) { alert('Project name is required.'); return; }
+
+  // Collect milestones
+  const milestones = [];
+  document.querySelectorAll('[id^="ms-title-"]')
+    .forEach(input => {
+      const num = input.id.replace('ms-title-', '');
+      const title = input.value.trim();
+      const date =
+        document.getElementById('ms-date-' + num)
+          ?.value || '';
+      if (title) {
+        milestones.push({ title, targetDate: date });
+      }
+    });
+
+  if (milestones.length === 0) {
+    alert('Add at least one milestone.'); return;
+  }
+
+  try {
+    const result = await post('/api/projects', {
+      name, description: desc, scope, region,
+      startDate: start, targetEndDate: end,
+      badgeName: badge, milestones
+    });
+    if (result.success) {
+      // Reset form
+      document.getElementById('proj-name').value = '';
+      document.getElementById('proj-desc').value = '';
+      document.getElementById('proj-badge').value = '';
+      document.getElementById('proj-start').value = '';
+      document.getElementById('proj-end').value   = '';
+      document.getElementById('milestone-inputs')
+        .innerHTML = '';
+      milestoneCount = 0;
+      addMilestoneInput();
+      addMilestoneInput();
+      loadProjects();
+    } else {
+      alert(result.message);
+    }
+  } catch (e) { alert('Failed to create project.'); }
+}
+
+// ── Assign cadet to project ───────────────────────────────────
+function openAssignCadet() {
+  document.getElementById('assign-project-id').value =
+    currentProjectId;
+  document.getElementById('assign-search').value = '';
+  document.getElementById('assign-results').innerHTML = '';
+  document.getElementById('assign-modal')
+    .classList.add('open');
+}
+
+function closeAssignModal() {
+  document.getElementById('assign-modal')
+    .classList.remove('open');
+}
+
+async function searchAssignCadet() {
+  const q =
+    document.getElementById('assign-search').value.trim();
+  if (q.length < 2) {
+    document.getElementById('assign-results')
+      .innerHTML = '';
+    return;
+  }
+  try {
+    const region = myRegion();
+    let url = '/api/cadets?search=' +
+      encodeURIComponent(q);
+    if (region)
+      url += '&project=' + encodeURIComponent(region);
+    const cadets = await get(url);
+    const projectId =
+      document.getElementById('assign-project-id').value;
+    document.getElementById('assign-results').innerHTML =
+      cadets.slice(0, 8).map(c => `
+        <div class="pending-card"
+          style="cursor:pointer"
+          onclick="assignCadet(${c.id},
+            '${c.fullName.replace(/'/g,"\\'")}',
+            ${projectId})">
+          <div>
+            <div style="font-weight:500">
+              ${c.fullName}
+            </div>
+            <div style="font-size:11px;color:#aaa">
+              ${c.cadetCode} · ${c.project}
+            </div>
+          </div>
+          <button class="icon-btn">Assign</button>
+        </div>`).join('');
+  } catch (e) {
+    console.error('Search failed:', e);
+  }
+}
+
+async function assignCadet(cadetId, cadetName, projectId) {
+  try {
+    const result = await post(
+      '/api/projects/' + projectId + '/assign',
+      { cadetId }
+    );
+    if (result.success) {
+      closeAssignModal();
+      openProjectDetail(projectId);
+      alert(cadetName + ' assigned successfully.');
+    } else {
+      alert(result.message);
+    }
+  } catch (e) { alert('Assignment failed.'); }
 }
 
 // ── Register ──────────────────────────────────────────────────
@@ -525,13 +1152,11 @@ async function loadRegisterLanding() {
   backToLanding();
   document.getElementById('reg-date').value =
     new Date().toISOString().split('T')[0];
-
-  // Pre-select region for Liaison
   if (myRegion()) {
-    const regRegion = document.getElementById('reg-region');
+    const regRegion =
+      document.getElementById('reg-region');
     if (regRegion) regRegion.value = myRegion();
   }
-
   loadMeetings();
   loadIncomplete();
 }
@@ -540,27 +1165,37 @@ async function loadMeetings() {
   const region = myRegion() ||
     document.getElementById('meeting-region-filter').value;
   let url = '/api/meetings';
-  if (region) url += '?region=' + encodeURIComponent(region);
+  if (region)
+    url += '?region=' + encodeURIComponent(region);
   try {
     const meetings = await get(url);
     renderMeetingsTable(meetings);
-  } catch (e) { console.error('Meetings load failed:', e); }
+  } catch (e) {
+    console.error('Meetings load failed:', e);
+  }
 }
 
 function renderMeetingsTable(meetings) {
-  const tbody = document.getElementById('meetings-table');
+  const tbody =
+    document.getElementById('meetings-table');
   if (meetings.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6"
       style="color:#aaa;font-size:12px;padding:12px 10px">
-      No meetings yet. Create one above.</td></tr>`;
+      No meetings yet.</td></tr>`;
     return;
   }
   tbody.innerHTML = meetings.map(m => `
     <tr>
-      <td style="font-weight:500;font-size:13px">${m.title}</td>
-      <td style="font-size:12px;color:#888">${m.meetingType}</td>
+      <td style="font-weight:500;font-size:13px">
+        ${m.title}
+      </td>
+      <td style="font-size:12px;color:#888">
+        ${m.meetingType}
+      </td>
       <td style="font-size:12px">${m.region}</td>
-      <td style="font-size:12px;color:#888">${m.meetingDate}</td>
+      <td style="font-size:12px;color:#888">
+        ${m.meetingDate}
+      </td>
       <td>
         <span class="meeting-status
           ${m.registerComplete
@@ -573,7 +1208,8 @@ function renderMeetingsTable(meetings) {
           onclick="openRegisterSheet(${m.id},
             '${m.title.replace(/'/g,"\\'")}',
             '${m.meetingDate}','${m.region}')">
-          ${m.registerComplete ? 'View' : 'Take register'}
+          ${m.registerComplete
+            ? 'View' : 'Take register'}
         </button>
       </td>
     </tr>`).join('');
@@ -582,16 +1218,18 @@ function renderMeetingsTable(meetings) {
 async function loadIncomplete() {
   try {
     const list = await get('/api/meetings/incomplete');
-    const el = document.getElementById('incomplete-list');
+    const el =
+      document.getElementById('incomplete-list');
     if (list.length === 0) {
       el.innerHTML =
         '<p style="color:#aaa;font-size:12px">' +
-        'All registers are up to date.</p>';
+        'All registers up to date.</p>';
       return;
     }
     const filtered = myRegion()
       ? list.filter(m =>
-          m.region === myRegion() || m.region === 'ALL')
+          m.region === myRegion() ||
+          m.region === 'ALL')
       : list;
     el.innerHTML = filtered.map(m => `
       <div class="pending-card">
@@ -608,20 +1246,26 @@ async function loadIncomplete() {
           Take register
         </button>
       </div>`).join('');
-  } catch (e) { console.error('Incomplete load failed:', e); }
+  } catch (e) {
+    console.error('Incomplete load failed:', e);
+  }
 }
 
 async function createMeeting() {
   const region = myRegion() ||
     document.getElementById('reg-region').value;
   const body = {
-    meetingType: document.getElementById('reg-type').value,
-    title:       document.getElementById('reg-title').value.trim(),
+    meetingType:
+      document.getElementById('reg-type').value,
+    title:
+      document.getElementById('reg-title').value.trim(),
     region,
-    meetingDate: document.getElementById('reg-date').value,
-    createdBy:   currentUser
+    meetingDate:
+      document.getElementById('reg-date').value,
+    createdBy: currentUser
       ? currentUser.fullName : 'Admin',
-    notes:       document.getElementById('reg-notes').value.trim()
+    notes:
+      document.getElementById('reg-notes').value.trim()
   };
   if (!body.meetingDate) {
     alert('Please select a date.'); return;
@@ -639,26 +1283,34 @@ async function createMeeting() {
   } catch (e) { alert('Failed to create meeting.'); }
 }
 
-async function openRegisterSheet(meetingId, title, date, region) {
+async function openRegisterSheet(
+    meetingId, title, date, region) {
   currentMeetingId = meetingId;
   registerEntries  = {};
-  document.getElementById('register-landing').style.display = 'none';
-  document.getElementById('register-sheet').style.display  = 'block';
-  document.getElementById('sheet-title').textContent = title;
+  document.getElementById('register-landing')
+    .style.display = 'none';
+  document.getElementById('register-sheet')
+    .style.display = 'block';
+  document.getElementById('sheet-title').textContent =
+    title;
   document.getElementById('sheet-subtitle').textContent =
     region + ' · ' + date;
-  document.getElementById('register-banner').style.display = 'none';
+  document.getElementById('register-banner')
+    .style.display = 'none';
   document.getElementById('register-groups').innerHTML =
-    '<p style="color:#aaa;font-size:13px">Loading cadets...</p>';
+    '<p style="color:#aaa;font-size:13px">' +
+    'Loading cadets...</p>';
 
   if (currentUser) {
-    const recBy = document.getElementById('register-recorded-by');
+    const recBy =
+      document.getElementById('register-recorded-by');
     if (recBy) recBy.value = currentUser.fullName;
   }
 
   try {
-    const data =
-      await get('/api/meetings/' + meetingId + '/register');
+    const data = await get(
+      '/api/meetings/' + meetingId + '/register'
+    );
     renderRegisterGroups(data.register);
   } catch (e) {
     document.getElementById('register-groups').innerHTML =
@@ -668,17 +1320,21 @@ async function openRegisterSheet(meetingId, title, date, region) {
 }
 
 function backToLanding() {
-  document.getElementById('register-landing').style.display = 'block';
-  document.getElementById('register-sheet').style.display  = 'none';
+  document.getElementById('register-landing')
+    .style.display = 'block';
+  document.getElementById('register-sheet')
+    .style.display = 'none';
   currentMeetingId = null;
   registerEntries  = {};
 }
 
 function renderRegisterGroups(grouped) {
-  const container = document.getElementById('register-groups');
+  const container =
+    document.getElementById('register-groups');
   const regions = myRegion()
     ? [myRegion()]
-    : ['Gauteng','eMazweni','eMangalisweni','eZenzweni', 'International', 'Zimbabwe', 'Mozambique'];
+    : ['Gauteng','Emazweni','Emangalisweni','Ezenzweni',
+      'Zimbabwe','Mozambique','International'];
   let html = '';
 
   for (const region of regions) {
@@ -688,23 +1344,30 @@ function renderRegisterGroups(grouped) {
       <div class="province-group">
         <div class="province-heading">
           ${region}
-          <span class="province-count">${cadets.length} cadets</span>
+          <span class="province-count">
+            ${cadets.length} cadets
+          </span>
         </div>
         <div class="register-header">
           <span></span><span>Cadet</span>
-          <span>Status</span><span>Absence reason</span>
+          <span>Status</span>
+          <span>Absence reason</span>
           <span></span>
         </div>`;
 
     cadets.forEach((c, i) => {
       registerEntries[c.cadetId] = {
-        cadetId: c.cadetId, cadetCode: c.cadetCode,
-        fullName: c.fullName, region,
-        status: c.status || '', absenceReason: c.absenceReason || ''
+        cadetId: c.cadetId,
+        cadetCode: c.cadetCode,
+        fullName: c.fullName,
+        region,
+        status: c.status || '',
+        absenceReason: c.absenceReason || ''
       };
       const isAbsent = c.status === 'ABSENT';
       html += `
-        <div class="register-row ${isAbsent ? 'absent-row' : ''}"
+        <div class="register-row
+          ${isAbsent ? 'absent-row' : ''}"
           id="row-${c.cadetId}">
           <span class="reg-num">${i + 1}</span>
           <div>
@@ -713,18 +1376,24 @@ function renderRegisterGroups(grouped) {
           </div>
           <div class="status-btn-group">
             <button class="status-btn
-              ${c.status==='PRESENT' ? 'selected-present' : ''}"
-              onclick="setStatus(${c.cadetId},'PRESENT')">
+              ${c.status==='PRESENT'
+                ? 'selected-present' : ''}"
+              onclick="setStatus(
+                ${c.cadetId},'PRESENT')">
               Present
             </button>
             <button class="status-btn
-              ${c.status==='ABSENT' ? 'selected-absent' : ''}"
-              onclick="setStatus(${c.cadetId},'ABSENT')">
+              ${c.status==='ABSENT'
+                ? 'selected-absent' : ''}"
+              onclick="setStatus(
+                ${c.cadetId},'ABSENT')">
               Absent
             </button>
             <button class="status-btn
-              ${c.status==='LATE' ? 'selected-late' : ''}"
-              onclick="setStatus(${c.cadetId},'LATE')">
+              ${c.status==='LATE'
+                ? 'selected-late' : ''}"
+              onclick="setStatus(
+                ${c.cadetId},'LATE')">
               Late
             </button>
           </div>
@@ -737,7 +1406,8 @@ function renderRegisterGroups(grouped) {
                 : 'Only needed if absent'}"
               value="${c.absenceReason || ''}"
               style="${isAbsent ? '' : 'display:none'}"
-              oninput="setReason(${c.cadetId}, this.value)">
+              oninput="setReason(
+                ${c.cadetId}, this.value)">
           </div>
           <div></div>
         </div>`;
@@ -746,28 +1416,33 @@ function renderRegisterGroups(grouped) {
   }
 
   container.innerHTML = html ||
-    '<p style="color:#aaa">No cadets found in this region.</p>';
+    '<p style="color:#aaa">' +
+    'No cadets found in this region.</p>';
 }
 
 function setStatus(cadetId, status) {
   if (!registerEntries[cadetId]) return;
   registerEntries[cadetId].status = status;
-  const row         = document.getElementById('row-' + cadetId);
-  const reasonInput = document.getElementById('reason-' + cadetId);
-  const btns        = row.querySelectorAll('.status-btn');
+  const row = document.getElementById('row-' + cadetId);
+  const reasonInput =
+    document.getElementById('reason-' + cadetId);
+  const btns = row.querySelectorAll('.status-btn');
   btns.forEach(b => b.classList.remove(
-    'selected-present','selected-absent','selected-late'));
-  if (status === 'PRESENT') btns[0].classList.add('selected-present');
-  if (status === 'ABSENT')  btns[1].classList.add('selected-absent');
-  if (status === 'LATE')    btns[2].classList.add('selected-late');
+    'selected-present','selected-absent','selected-late'
+  ));
+  if (status === 'PRESENT')
+    btns[0].classList.add('selected-present');
+  if (status === 'ABSENT')
+    btns[1].classList.add('selected-absent');
+  if (status === 'LATE')
+    btns[2].classList.add('selected-late');
   if (status === 'ABSENT') {
     reasonInput.style.display = 'block';
-    reasonInput.placeholder   = 'Required — enter reason';
+    reasonInput.placeholder = 'Required — enter reason';
     row.classList.add('absent-row');
-  
   } else {
     reasonInput.style.display = 'none';
-    reasonInput.value         = '';
+    reasonInput.value = '';
     registerEntries[cadetId].absenceReason = '';
     row.classList.remove('absent-row');
   }
@@ -776,8 +1451,11 @@ function setStatus(cadetId, status) {
 function setReason(cadetId, value) {
   if (!registerEntries[cadetId]) return;
   registerEntries[cadetId].absenceReason = value;
-  const input = document.getElementById('reason-' + cadetId);
-  input.classList.toggle('filled', value.trim().length > 0);
+  const input =
+    document.getElementById('reason-' + cadetId);
+  input.classList.toggle(
+    'filled', value.trim().length > 0
+  );
 }
 
 function filterSheetRows() {
@@ -787,13 +1465,15 @@ function filterSheetRows() {
     const name = row.querySelector('.reg-name');
     if (!name) return;
     row.style.display =
-      name.textContent.toLowerCase().includes(q) ? '' : 'none';
+      name.textContent.toLowerCase().includes(q)
+        ? '' : 'none';
   });
 }
 
 async function submitRegister() {
   const recordedBy =
-    document.getElementById('register-recorded-by').value.trim();
+    document.getElementById('register-recorded-by')
+      .value.trim();
   if (!recordedBy) {
     showBanner('error',
       'Please enter your name before submitting.');
@@ -803,7 +1483,8 @@ async function submitRegister() {
   const noStatus = entries.filter(e => !e.status);
   if (noStatus.length > 0) {
     showBanner('error',
-      noStatus.length + ' cadet(s) have no status selected.');
+      noStatus.length +
+      ' cadet(s) have no status selected.');
     return;
   }
   const missingReason = entries.filter(
@@ -815,8 +1496,12 @@ async function submitRegister() {
       'Absence reason required for: ' +
       missingReason.map(e => e.fullName).join(', '));
     missingReason.forEach(e => {
-      const input = document.getElementById('reason-' + e.cadetId);
-      if (input) { input.style.borderColor = '#e24b4a'; input.focus(); }
+      const input =
+        document.getElementById('reason-' + e.cadetId);
+      if (input) {
+        input.style.borderColor = '#e24b4a';
+        input.focus();
+      }
     });
     return;
   }
@@ -826,9 +1511,11 @@ async function submitRegister() {
       { recordedBy, entries }
     );
     if (result.success) {
-      let msg = 'Register submitted. ' + result.saved + ' records saved.';
+      let msg = 'Register submitted. ' +
+        result.saved + ' records saved.';
       let type = 'success';
-      if (result.autoFlagged && result.autoFlagged.length > 0) {
+      if (result.autoFlagged &&
+          result.autoFlagged.length > 0) {
         msg += ' Yellow Flag auto-issued for: ' +
           result.autoFlagged.join(', ');
         type = 'warning';
@@ -840,16 +1527,20 @@ async function submitRegister() {
       showBanner('error', result.message);
     }
   } catch (e) {
-    showBanner('error', 'Submission failed. Please try again.');
+    showBanner('error',
+      'Submission failed. Please try again.');
   }
 }
 
 function showBanner(type, msg) {
-  const el = document.getElementById('register-banner');
+  const el =
+    document.getElementById('register-banner');
   el.className = 'banner banner-' + type;
   el.textContent = msg;
   el.style.display = 'block';
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  el.scrollIntoView(
+    { behavior: 'smooth', block: 'nearest' }
+  );
 }
 
 // ── Reports ───────────────────────────────────────────────────
@@ -857,26 +1548,30 @@ async function loadReports() {
   try {
     const data = await get('/api/dashboard');
     const flagged =
-      data.yellowCount + data.orangeCount + data.redCount;
+      data.yellowCount +
+      data.orangeCount +
+      data.redCount;
     const pct = v =>
-      Math.round(v / (data.totalCadets || 1) * 100) + '%';
+      Math.round(
+        v / (data.totalCadets || 1) * 100
+      ) + '%';
     const stats = [
-      ['Total cadets',           data.totalCadets],
-      ['Good standing',          data.activeCount +
+      ['Total cadets',       data.totalCadets],
+      ['Good standing',      data.activeCount +
         ' (' + pct(data.activeCount) + ')'],
-      ['Yellow flag',            data.yellowCount +
+      ['Yellow flag',        data.yellowCount +
         ' (' + pct(data.yellowCount) + ')'],
-      ['Orange flag',            data.orangeCount +
+      ['Orange flag',        data.orangeCount +
         ' (' + pct(data.orangeCount) + ')'],
-      ['Red flag',               data.redCount +
+      ['Red flag',           data.redCount +
         ' (' + pct(data.redCount) + ')'],
-      ['Total under flag',       flagged +
+      ['Total under flag',   flagged +
         ' (' + pct(flagged) + ')'],
-      ['Under correction',       data.underCorrection],
-      ['Average attendance',     data.averageAttendance + '%'],
-
+      ['Under correction',   data.underCorrection],
+      ['Average attendance', data.averageAttendance + '%'],
+      ['Programme duration', '3 Years'],
     ];
-    document.getElementById('summary').innerHTML =
+    document.getElementById('kpi-summary').innerHTML =
       stats.map(([k,v]) => `
         <div class="stat-row">
           <span class="stat-key">${k}</span>
@@ -888,8 +1583,10 @@ async function loadReports() {
         await get('/api/meetings/region-summary');
       const byRegion = regionData.byRegion || {};
       const ctx = document
-        .getElementById('reportRegionChart').getContext('2d');
-      if (reportRegionChart) reportRegionChart.destroy();
+        .getElementById('reportRegionChart')
+        .getContext('2d');
+      if (reportRegionChart)
+        reportRegionChart.destroy();
       reportRegionChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -912,28 +1609,35 @@ async function loadReports() {
     } catch (e) {
       document.getElementById('reportRegionChart')
         .parentElement.innerHTML =
-        '<p style="color:#aaa;font-size:12px;padding:12px">' +
-        'No attendance data yet.</p>';
+        '<p style="color:#aaa;font-size:12px;' +
+        'padding:12px">No attendance data yet.</p>';
     }
-  } catch (e) { console.error('Reports load failed:', e); }
+  } catch (e) {
+    console.error('Reports load failed:', e);
+  }
 }
 
 async function searchCadetReport() {
-  const q = document.getElementById('report-search').value.trim();
+  const q =
+    document.getElementById('report-search').value.trim();
   if (q.length < 2) {
-    document.getElementById('report-cadet-results').innerHTML = '';
+    document.getElementById('report-cadet-results')
+      .innerHTML = '';
     return;
   }
   try {
     const cadets = await get(
       '/api/cadets?search=' + encodeURIComponent(q)
     );
-    document.getElementById('report-cadet-results').innerHTML =
-      cadets.slice(0,8).map(c => `
-        <div class="pending-card" style="cursor:pointer"
+    document.getElementById('report-cadet-results')
+      .innerHTML = cadets.slice(0,8).map(c => `
+        <div class="pending-card"
+          style="cursor:pointer"
           onclick="loadCadetReport(${c.id})">
           <div>
-            <div style="font-weight:500">${c.fullName}</div>
+            <div style="font-weight:500">
+              ${c.fullName}
+            </div>
             <div style="color:#aaa;font-size:11px">
               ${c.cadetCode} · ${c.project}
             </div>
@@ -942,14 +1646,18 @@ async function searchCadetReport() {
             ${c.attendancePercent}% attendance
           </span>
         </div>`).join('');
-  } catch (e) { console.error('Search failed:', e); }
+  } catch (e) {
+    console.error('Search failed:', e);
+  }
 }
 
 async function loadCadetReport(cadetId) {
   try {
-    const data =
-      await get('/api/meetings/cadet/' + cadetId + '/report');
-    document.getElementById('report-cadet-detail').innerHTML = `
+    const data = await get(
+      '/api/meetings/cadet/' + cadetId + '/report'
+    );
+    document.getElementById('report-cadet-detail')
+      .innerHTML = `
       <div style="margin-top:16px;padding-top:16px;
         border-top:0.5px solid #e0e0dc">
         <div style="display:flex;align-items:center;
@@ -959,7 +1667,9 @@ async function loadCadetReport(cadetId) {
             ${initials(data.cadet.fullName)}
           </div>
           <div>
-            <div style="font-weight:500">${data.cadet.fullName}</div>
+            <div style="font-weight:500">
+              ${data.cadet.fullName}
+            </div>
             <div style="font-size:12px;color:#aaa">
               ${data.cadet.cadetCode} · ${data.cadet.project}
             </div>
@@ -968,39 +1678,57 @@ async function loadCadetReport(cadetId) {
             gap:20px;text-align:center">
             <div>
               <div style="font-size:20px;font-weight:500;
-                color:#3b6d11">${data.attendancePct}%</div>
-              <div style="font-size:11px;color:#aaa">attendance</div>
+                color:#3b6d11">
+                ${data.attendancePct}%
+              </div>
+              <div style="font-size:11px;color:#aaa">
+                attendance
+              </div>
             </div>
             <div>
               <div style="font-size:20px;font-weight:500">
-                ${data.attended}/${data.totalMeetings}</div>
-              <div style="font-size:11px;color:#aaa">meetings</div>
+                ${data.attended}/${data.totalMeetings}
+              </div>
+              <div style="font-size:11px;color:#aaa">
+                meetings
+              </div>
             </div>
             <div>
               <div style="font-size:20px;font-weight:500;
-                color:${data.absences > 0 ? '#a32d2d' : '#1a1a1a'}">
-                ${data.absences}</div>
-              <div style="font-size:11px;color:#aaa">absences</div>
+                color:${data.absences > 0
+                  ? '#a32d2d' : '#1a1a1a'}">
+                ${data.absences}
+              </div>
+              <div style="font-size:11px;color:#aaa">
+                absences
+              </div>
             </div>
           </div>
         </div>
         ${data.history.length === 0
-          ? '<p style="color:#aaa;font-size:12px">No records yet.</p>'
+          ? '<p style="color:#aaa;font-size:12px">' +
+            'No records yet.</p>'
           : `<table><thead><tr>
               <th>Date</th><th>Status</th>
               <th>Reason</th><th>Recorded by</th>
              </tr></thead><tbody>
              ${data.history.map(r => `<tr>
-               <td style="font-size:12px">${r.meetingDate}</td>
+               <td style="font-size:12px">
+                 ${r.meetingDate}
+               </td>
                <td>${attendanceBadge(r.status)}</td>
                <td style="font-size:12px;color:#888">
-                 ${r.absenceReason || '—'}</td>
+                 ${r.absenceReason || '—'}
+               </td>
                <td style="font-size:12px;color:#aaa">
-                 ${r.recordedBy}</td>
+                 ${r.recordedBy}
+               </td>
              </tr>`).join('')}
              </tbody></table>`}
       </div>`;
-  } catch (e) { console.error('Cadet report failed:', e); }
+  } catch (e) {
+    console.error('Cadet report failed:', e);
+  }
 }
 
 function attendanceBadge(status) {
@@ -1013,12 +1741,14 @@ function attendanceBadge(status) {
   return `<span class="flag ${cls}">${label}</span>`;
 }
 
-// ── User management (Admin only) ──────────────────────────────
+// ── User management ───────────────────────────────────────────
 async function loadUsers() {
   try {
     const users = await get('/api/users');
     renderUsersTable(users);
-  } catch (e) { console.error('Users load failed:', e); }
+  } catch (e) {
+    console.error('Users load failed:', e);
+  }
 }
 
 function renderUsersTable(users) {
@@ -1028,7 +1758,9 @@ function renderUsersTable(users) {
     <tr>
       <td>
         <div class="cadet-cell">
-          <div class="avatar">${initials(u.fullName)}</div>
+          <div class="avatar">
+            ${initials(u.fullName)}
+          </div>
           <div>
             <div class="cadet-name">${u.fullName}</div>
             <div class="cadet-id">${u.username}</div>
@@ -1038,7 +1770,8 @@ function renderUsersTable(users) {
       <td style="font-size:12px">${u.role}</td>
       <td style="font-size:12px">${u.region}</td>
       <td>
-        <span class="flag ${u.active ? 'flag-none' : 'flag-red'}">
+        <span class="flag
+          ${u.active ? 'flag-none' : 'flag-red'}">
           ${u.active ? 'Active' : 'Inactive'}
         </span>
       </td>
@@ -1046,13 +1779,18 @@ function renderUsersTable(users) {
         <div class="action-btns">
           ${u.role !== 'ADMIN' ? `
             <button class="icon-btn"
-              onclick="toggleUserActive(${u.id}, ${u.active})">
+              onclick="toggleUserActive(
+                ${u.id}, ${u.active})">
               ${u.active ? 'Deactivate' : 'Activate'}
             </button>
             <button class="icon-btn"
-              onclick="openResetPassword(${u.id}, '${u.fullName}')">
+              onclick="openResetPassword(
+                ${u.id},'${u.fullName
+                  .replace(/'/g,"\\'")}')">
               Reset password
-            </button>` : '<span style="font-size:11px;color:#aaa">Admin</span>'}
+            </button>` :
+            '<span style="font-size:11px;color:#aaa">' +
+            'Admin</span>'}
         </div>
       </td>
     </tr>`).join('');
@@ -1068,60 +1806,75 @@ async function toggleUserActive(id, isActive) {
   } catch (e) { alert('Action failed.'); }
 }
 
-// User modal
 function openUserModal() {
-  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('user-modal')
+    .classList.add('open');
 }
 function closeUserModal() {
-  document.getElementById('user-modal').classList.remove('open');
+  document.getElementById('user-modal')
+    .classList.remove('open');
 }
 
 async function submitNewUser() {
   const body = {
-    username: document.getElementById('u-username').value.trim(),
-    password: document.getElementById('u-password').value.trim(),
-    fullName: document.getElementById('u-fullname').value.trim(),
-    role:     document.getElementById('u-role').value,
-    region:   document.getElementById('u-region').value
+    username:
+      document.getElementById('u-username').value.trim(),
+    password:
+      document.getElementById('u-password').value.trim(),
+    fullName:
+      document.getElementById('u-fullname').value.trim(),
+    role:   document.getElementById('u-role').value,
+    region: document.getElementById('u-region').value
   };
   if (!body.username || !body.password || !body.fullName) {
     alert('Please fill in all fields.'); return;
   }
   try {
     const result = await post('/api/users', body);
-    if (result.success) { closeUserModal(); loadUsers(); }
-    else alert(result.message);
+    if (result.success) {
+      closeUserModal(); loadUsers();
+    } else {
+      alert(result.message);
+    }
   } catch (e) { alert('Failed to create user.'); }
 }
 
-// Reset password modal
 function openResetPassword(id, name) {
-  document.getElementById('rp-user-name').textContent = name;
+  document.getElementById('rp-user-name').textContent =
+    name;
   document.getElementById('rp-user-id').value = id;
-  document.getElementById('rp-modal').classList.add('open');
+  document.getElementById('rp-modal')
+    .classList.add('open');
 }
 function closeResetModal() {
-  document.getElementById('rp-modal').classList.remove('open');
+  document.getElementById('rp-modal')
+    .classList.remove('open');
 }
 
 async function submitResetPassword() {
-  const id  = document.getElementById('rp-user-id').value;
-  const pwd = document.getElementById('rp-password').value.trim();
+  const id  =
+    document.getElementById('rp-user-id').value;
+  const pwd =
+    document.getElementById('rp-password').value.trim();
   if (!pwd || pwd.length < 6) {
-    alert('Password must be at least 6 characters.'); return;
+    alert('Password must be at least 6 characters.');
+    return;
   }
   try {
     const result = await put(
-      '/api/users/' + id + '/password', { newPassword: pwd }
+      '/api/users/' + id + '/password',
+      { newPassword: pwd }
     );
-    if (result.success) { closeResetModal(); alert(result.message); }
-    else alert(result.message);
+    if (result.success) {
+      closeResetModal(); alert(result.message);
+    } else {
+      alert(result.message);
+    }
   } catch (e) { alert('Failed to reset password.'); }
 }
 
 // ── Add cadet modal ───────────────────────────────────────────
 function openModal() {
-  // Pre-select region for Liaison
   if (myRegion()) {
     const sel = document.getElementById('new-project');
     if (sel) sel.value = myRegion();
@@ -1129,25 +1882,29 @@ function openModal() {
   document.getElementById('modal').classList.add('open');
 }
 function closeModal() {
-  document.getElementById('modal').classList.remove('open');
+  document.getElementById('modal')
+    .classList.remove('open');
 }
 
 async function submitNewCadet() {
   const body = {
-    cadetCode:         document.getElementById('new-code')
-      .value.trim(),
-    fullName:          document.getElementById('new-name')
-      .value.trim(),
-    project:           document.getElementById('new-project').value,
+    cadetCode:
+      document.getElementById('new-code').value.trim(),
+    fullName:
+      document.getElementById('new-name').value.trim(),
+    project:
+      document.getElementById('new-project').value,
     attendancePercent: parseInt(
       document.getElementById('new-att').value) || 0,
-    projectManager:    document.getElementById('new-pm')
-      .value.trim(),
-    flagStatus:        'NONE',
-    lastContactDate:   new Date().toISOString().split('T')[0]
+    projectManager:
+      document.getElementById('new-pm').value.trim(),
+    flagStatus:       'NONE',
+    lastContactDate:
+      new Date().toISOString().split('T')[0]
   };
   if (!body.fullName || !body.cadetCode) {
-    alert('Please enter a full name and cadet ID.'); return;
+    alert('Please enter a full name and cadet ID.');
+    return;
   }
   try {
     await post('/api/cadets', body);
@@ -1166,22 +1923,26 @@ function openFlagModal(cadetId, action) {
     red:     'Escalate to Red Flag',
     restore: 'Restore cadet status'
   };
-  document.getElementById('flag-modal-title').textContent =
-    titles[action];
-  document.getElementById('flag-reason-row').style.display =
-    action === 'restore' || action === 'orange' ? 'none' : 'block';
-  document.getElementById('flag-notes-row').style.display =
-    action === 'restore' ? 'block' : 'none';
-
-  // Pre-fill triggered by
-  const trigEl = document.getElementById('flag-triggered-by');
-  if (trigEl && currentUser) trigEl.value = currentUser.fullName;
-
-  document.getElementById('flag-modal').classList.add('open');
+  document.getElementById('flag-modal-title')
+    .textContent = titles[action];
+  document.getElementById('flag-reason-row')
+    .style.display =
+      action === 'restore' ||
+      action === 'orange' ? 'none' : 'block';
+  document.getElementById('flag-notes-row')
+    .style.display =
+      action === 'restore' ? 'block' : 'none';
+  const trigEl =
+    document.getElementById('flag-triggered-by');
+  if (trigEl && currentUser)
+    trigEl.value = currentUser.fullName;
+  document.getElementById('flag-modal')
+    .classList.add('open');
 }
 
 function closeFlagModal() {
-  document.getElementById('flag-modal').classList.remove('open');
+  document.getElementById('flag-modal')
+    .classList.remove('open');
   currentFlagAction = null;
 }
 
@@ -1189,26 +1950,36 @@ async function submitFlagAction() {
   if (!currentFlagAction) return;
   const { cadetId, action } = currentFlagAction;
   const triggeredBy =
-    document.getElementById('flag-triggered-by').value.trim()
-    || (currentUser ? currentUser.fullName : 'Admin');
+    document.getElementById('flag-triggered-by')
+      .value.trim() ||
+    (currentUser ? currentUser.fullName : 'Admin');
   const reason =
-    document.getElementById('flag-reason').value.trim()
-    || 'No reason provided.';
+    document.getElementById('flag-reason')
+      .value.trim() || 'No reason provided.';
   const notes =
-    document.getElementById('flag-notes').value.trim() || '';
+    document.getElementById('flag-notes')
+      .value.trim() || '';
   try {
     if (action === 'yellow')
-      await post(`/api/cadets/${cadetId}/flag/yellow`,
-        { triggeredBy, reason });
+      await post(
+        `/api/cadets/${cadetId}/flag/yellow`,
+        { triggeredBy, reason }
+      );
     else if (action === 'orange')
-      await post(`/api/cadets/${cadetId}/flag/orange`,
-        { triggeredBy });
+      await post(
+        `/api/cadets/${cadetId}/flag/orange`,
+        { triggeredBy }
+      );
     else if (action === 'red')
-      await post(`/api/cadets/${cadetId}/flag/red`,
-        { triggeredBy, reason });
+      await post(
+        `/api/cadets/${cadetId}/flag/red`,
+        { triggeredBy, reason }
+      );
     else if (action === 'restore')
-      await post(`/api/cadets/${cadetId}/restore`,
-        { triggeredBy, notes });
+      await post(
+        `/api/cadets/${cadetId}/restore`,
+        { triggeredBy, notes }
+      );
     closeFlagModal();
     loadCadets();
     loadFlagView();
